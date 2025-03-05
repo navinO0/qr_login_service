@@ -79,38 +79,72 @@ const user_create_schema = {
         },
         required: ["username", "password", "email"],  // Make username, password, and email required
         additionalProperties: false
-    },
-    response: {
-        200: {
-            type: "object",
-            properties: {
-                message: { type: "string", example: "User registration successful" },
-                user_id: { type: "string", example: "12345" }
-            }
-        },
-        400: {
-            type: "object",
-            properties: {
-                error: { type: "string", example: "Bad Request" },
-                message: { type: "string", example: "Missing required fields or invalid format" }
-            }
-        },
-        409: {
-            type: "object",
-            properties: {
-                error: { type: "string", example: "Conflict" },
-                message: { type: "string", example: "Username or email already exists" }
-            }
-        },
-        500: {
-            type: "object",
-            properties: {
-                error: { type: "string", example: "Internal Server Error" },
-                message: { type: "string", example: "Something went wrong" }
-            }
-        }
     }
 };
+
+
+const user_login_schema = {
+    tags: ['user'],
+    summary: "User Registration and Login",
+    description: `<h3>This API allows users to register, login, and manage their accounts.</h3>`,
+    rbac: ["*"],  // Roles or permissions (adjust as needed, e.g., ['admin', 'user'])
+    body: {
+        type: "object",
+        properties: {
+            username: {
+                type: "string",
+                minLength: 3,
+                maxLength: 255,
+                description: "Unique username for the user",
+                pattern: "^[a-zA-Z0-9_]+$",  // Only alphanumeric characters and underscores allowed
+                example: "john_doe123"
+            },
+            password: {
+                type: "string",
+                minLength: 8,
+                description: "User's password (hashed using bcrypt)",
+                example: "user_password123"
+            }
+        },
+        required: ["username", "password" ],  // Make username, password, and email required
+        additionalProperties: false
+    }
+};
+
+const lgin_code_schema = {
+    tags: ['user'],
+    summary: "User Registration and Login",
+    description: `<h3>This API allows users to register, login, and manage their accounts.</h3>`,
+    rbac: ["*"],  // Roles or permissions (adjust as needed, e.g., ['admin', 'user'])
+    security: [{ ApiToken: [] }],
+    body: {
+        type: "object",
+        properties: {
+            token: {
+                type: "string",
+            },
+        },
+        required: ["token"],  // Make username, password, and email required
+        additionalProperties: false
+    }
+};
+
+const login_with_code = {
+    tags: ['user'],
+    summary: "User Registration and Login",
+    description: `<h3>This API allows users to register, login, and manage their accounts.</h3>`,
+    rbac: ["*"],  // Roles or permissions (adjust as needed, e.g., ['admin', 'user'])
+    params: {
+        type: "object",
+        properties: {
+            code: {
+                type: "string",
+            },
+        },
+        required: ["code"],  
+        additionalProperties: false
+    }
+}
 
 
 
@@ -133,4 +167,4 @@ async function ajvCompiler(app, options) {
     });
 }
 
-module.exports = { qr_schema, ajvCompiler, user_create_schema }
+module.exports = { qr_schema, ajvCompiler, user_create_schema, user_login_schema, lgin_code_schema, login_with_code }

@@ -13,6 +13,7 @@ const pino = require('pino');
 const { ajvCompiler } = require('./qr_link/schemas/qr_schema');
 const { v4: uuid } = require('uuid');
 const { knexClientCreate } = require('./core/qpf_knex_query_builder');
+const { validateAccessToken } = require('./core/token_generate_validate');
 
 function getAllRoutes(filePath, routes = []) {
     const stats = fs.statSync(filePath);
@@ -87,25 +88,9 @@ async function serverSetup(swaggerURL) {
             routePrefix: swaggerURL + 'swagger/public/documentation', // This should be the same path as defined in swaggerConfig
         });
         await knexClientCreate(app, APP_DB_CONFIG, 'knex');
-        // app.addHook('onRequest', (req, reply, done) => {
-        //     const { url } = req.raw;
-        //     if (url.includes('documentation') || url.includes('public/payment/redirect') || url.includes('payment/public/redirect') || url.includes('sso/nic/login') || url.includes('redirect') || url.includes('qpfstatic')) {
-        //         return done();
-        //     };
-        //     if (!req.headers['qp-language-code']) {
-        //         req.headers['qp-language-code'] = app.config?.INSTANCE?.DEFAULT_LANGUAGE_CODE || 'en'
-        //     }
-        //     if (config.INSTANCE.INSTANCE_WSO2) {
-        //         done()
-        //     } else {
-        //         if (!req.headers['qp-tc-request-id'] || req.headers['qp-tc-request-id'] !== app.static_config.QP_TC_REQUEST_ID) {
-        //             return reply.code(403).send({ type: 'error', message: "Not allowed to access the server" });
-        //         } else {
-        //             done()
-        //         }
-        //     }
-        // })
-
+        app.addHook('onRequest', async (request, reply) => {
+            return await validateAccessToken({ request }, reply, app);
+        })
 
         // app.addHook('preValidation', requestContext);
         // if (!config.INSTANCE.INSTANCE_WSO2) {
