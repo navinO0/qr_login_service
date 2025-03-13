@@ -22,7 +22,7 @@ function retrieveData(key) {
             console.error("Error retrieving data:", err);
         } else {
             if (result === null) {
-                console.log("Data not found or expired.");
+                return null
             } else {
                 console.log(`Data retrieved: ${result}`);
                 return result

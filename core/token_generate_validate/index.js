@@ -29,7 +29,7 @@ const validateToken = (token) => {
         const decoded = jwt.verify(token, JWT_SECRET);
         return decoded
     } catch (err) {
-        return {status : 401, message : 'token validateion failed'}
+        return { status: 401, message: 'token validateion failed' }
     }
 }
 
@@ -108,5 +108,5 @@ async function validateAccessToken({ request }, reply, app) {
 //     }
 
 // }
-   
+
 module.exports = { genereateToke, validateAccessToken }

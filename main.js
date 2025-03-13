@@ -6,7 +6,7 @@ const { serverSetup, getAllRoutes } = require('./server');
 const path = require('path');
 require('events').EventEmitter.defaultMaxListeners = 30;
 
-const PORT = 3004;
+const PORT = 3009;
 
 const urlPrefix = "/users";
 
@@ -39,14 +39,7 @@ const urlPrefix = "/users";
             })
             .catch((err) => {
                 throw new Error("Failed to start the server.", err);
-            });;
-
-        // console.log(server)
-
-
-        // console.log('Everything is Loaded..!');
-        // console.log('Swagger URL: http://0.0.0.0:3007/swagger/public/documentation');
-        // console.log('Check server status URL: http://0.0.0.0:3007/public/status');
+            });
 
     } catch (err) {
         console.error('Error occurred:', err); // Use console.error for errors

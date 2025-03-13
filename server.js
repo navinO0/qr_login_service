@@ -14,6 +14,7 @@ const { ajvCompiler } = require('./qr_link/schemas/qr_schema');
 const { v4: uuid } = require('uuid');
 const { knexClientCreate } = require('./core/qpf_knex_query_builder');
 const { validateAccessToken } = require('./core/token_generate_validate');
+// const fastifyWebsocket = require('fastify-websocket');
 
 function getAllRoutes(filePath, routes = []) {
     const stats = fs.statSync(filePath);
@@ -91,6 +92,13 @@ async function serverSetup(swaggerURL) {
         app.addHook('onRequest', async (request, reply) => {
             return await validateAccessToken({ request }, reply, app);
         })
+        // app.register(fastifyWebsocket, {}, (err) => {
+        //     if (err) {
+        //         console.error('WebSocket plugin failed to load:', err);
+        //     } else {
+        //         console.log('WebSocket plugin loaded successfully');
+        //     }
+        // });
 
         // app.addHook('preValidation', requestContext);
         // if (!config.INSTANCE.INSTANCE_WSO2) {

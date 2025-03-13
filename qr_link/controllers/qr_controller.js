@@ -1,6 +1,6 @@
 'use strict'
 
-const { generateUniqueCode } = require('../../core/core_funcs');
+const { generateUniqueCode, replyError, replySuccess } = require('../../core/core_funcs');
 const { hashPassword, verifyPassword } = require('../../core/password_enc_desc');
 const { storeData, retrieveData } = require('../../core/redis');
 const { validateToken } = require('../../core/token_generate_validate');
@@ -17,6 +17,7 @@ async function GET_USERS(request, reply) {
 
 
 async function CREATE_USER(request, reply) {
+    try {
     const body = request.body
     const hashedPassword = await hashPassword(body.password)
     const userDetails = {
@@ -30,7 +31,10 @@ async function CREATE_USER(request, reply) {
     }
 
     const userCreateResponse = await createUser(this, userDetails)
-    reply.send(userCreateResponse).status(200)
+        return replySuccess(reply, userCreateResponse)
+    } catch (err) {
+       return replyError(reply, err)
+    }
 }
 
 
@@ -40,11 +44,11 @@ async function LOGIN(request, reply) {
         const JWT_SECRET = 'CHITTIOOM';
         const user = await getUserDetails(this, username)
         if (!user) {
-            return reply.status(401).send({ message: 'Username or password is incorrect' });
+            return replyError(reply, { message: 'Username or password is incorrect' })
         }
         const isMatch = await verifyPassword(password, user.password)
         if (!isMatch) {
-            return reply.status(401).send({ message: 'Username or password is incorrect' });
+            return replyError(reply, { message: 'Username or password is incorrect' })
         }
 
         const token = jwt.sign(
@@ -53,31 +57,34 @@ async function LOGIN(request, reply) {
             { expiresIn: '1h' }
         );
 
-        reply.send({ token }).status(200)
+        return replySuccess(reply, { token })
     } catch (err) {
-        console.log(err)
+        return replyError(reply, err)
     }
 }
 
 async function GET_CODE(request, reply) {
-    const token = request.token
-    // const validateAndUserData = validateToken(token)
-    const code = generateUniqueCode()
-    await storeData(code, token, 360)
-    const cachedData = await retrieveData(code)
-    reply.send(code).status(200)
+    try {
+        const token = request.token
+        const code = generateUniqueCode()
+        await storeData(code, token, 3600)
+        return replySuccess(reply, {code})
+    } catch (err) {
+        return replyError(reply, err)
+    } 
 }
 
 async function LOGIN_WITH_CODE(request, reply) {
-    const loginCode = request.params.code
-    const cachedData = await retrieveData(loginCode)
-    if (!cachedData) {
-        reply.send({status : 'failed', message : 'Invalid code or code has been expired'})
+    try {
+        const loginCode = request.params.code
+        const cachedData = await retrieveData(loginCode)
+        if (!cachedData) {
+            return replyError(reply, { message: 'invalid code or code has been expired' })
+        }
+        return replySuccess(reply, { message: 'login success', token : cachedData })
+    } catch (err) {
+        return replyError(reply, err)
     }
-    reply.send({
-        status: 'success',
-        token : cachedData
-    })
 }
 
 
