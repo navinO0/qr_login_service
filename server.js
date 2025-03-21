@@ -14,7 +14,9 @@ const { ajvCompiler } = require('./qr_link/schemas/qr_schema');
 const { v4: uuid } = require('uuid');
 const { knexClientCreate } = require('./core/qpf_knex_query_builder');
 const { validateAccessToken } = require('./core/token_generate_validate');
-// const fastifyWebsocket = require('fastify-websocket');
+const { config } = require('./core/config');
+const { requestContext } = require('./core/requestContext');
+const { appendPayloadToResponse } = require('./core/hooks/hooks');
 
 function getAllRoutes(filePath, routes = []) {
     const stats = fs.statSync(filePath);
@@ -77,6 +79,7 @@ async function serverSetup(swaggerURL) {
         });
         // app.decorate('host_name', os.hostname());
         app.decorate('host_name', os.hostname());
+        app.decorate('config', config)
         // global access of logs logger object
         app.register(require('@fastify/sensible'));
         // app.register(underPressure, underPressureConfig(swaggerURL));
@@ -92,13 +95,6 @@ async function serverSetup(swaggerURL) {
         app.addHook('onRequest', async (request, reply) => {
             return await validateAccessToken({ request }, reply, app);
         })
-        // app.register(fastifyWebsocket, {}, (err) => {
-        //     if (err) {
-        //         console.error('WebSocket plugin failed to load:', err);
-        //     } else {
-        //         console.log('WebSocket plugin loaded successfully');
-        //     }
-        // });
 
         // app.addHook('preValidation', requestContext);
         // if (!config.INSTANCE.INSTANCE_WSO2) {
@@ -107,7 +103,7 @@ async function serverSetup(swaggerURL) {
 
 
         // app.addHook('preValidation', validateSchema);
-        // app.addHook('preSerialization', appendPayloadToResponse);
+        app.addHook('preSerialization', appendPayloadToResponse);
         // app.addHook('onSend', onSend);
         // app.addHook('onResponse', onResponse);
         // if (config.INSTANCE.INSTANCE_WSO2) {
@@ -119,6 +115,7 @@ async function serverSetup(swaggerURL) {
         //         return await validateAccessToken({ request }, reply, app);
         //     })
         // }
+        app.addHook('preValidation', requestContext);
         await ajvCompiler(app, {});
 
         // setupGracefulShutdown ({ app: app });

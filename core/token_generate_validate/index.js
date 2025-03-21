@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 
 
 // Secret key for JWT (in a real-world application, store this in an environment variable)
-const JWT_SECRET = 'CHITTIOOM';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 
 const genereateToke = (app, userdata) => {
@@ -14,7 +14,7 @@ const genereateToke = (app, userdata) => {
     const token = jwt.sign(
         userdata,
         JWT_SECRET,
-        { expiresIn: '1h' } // Token expires in 1 hour
+        { expiresIn: '1h' } 
     );
 
     return token
@@ -51,26 +51,9 @@ async function validateAccessToken({ request }, reply, app) {
                         if (!token || token === '') {
                             return reply.code(401).send({ code: 401, type: 'error', "message": "Authorization required" });
                         }
-                        const decoded = jwt.verify(token, JWT_SECRET);
+                        const decoded = jwt.verify(token, app.config.JWT_SECRET);
                         request.token = token
                         request.user_info = decoded
-
-                        // let tokenResp;
-                        // if (app.config?.INSTANCE?.TOKEN_WITH_REDIS) {
-                        //   tokenResp = await QPF_getCachingValue(app, tokenKey);
-                        // } else if (Number(token_details.token_expiry_time) > Number(new Date().getTime())) {
-                        //   tokenResp = token;
-                        // }
-
-                        // if (tokenResp && token === tokenResp) {
-                        //     request.user_info = token_details.user_info;
-                        //     request.tenant_info = token_details.tenant_info;
-                        //     request.secure_keys = token_details.secure_keys;
-                        //     updateHeaders(request.headers, token_details.user_info);
-                        //     return tokenResp;
-                        // } else {
-                        //     return reply.code(401).send({ code: 401, type: 'error', "message": "Authorization required" });
-                        // }
                         if (!decoded || Object.keys(decoded).length === 0) {
                             return reply.code(401).send({ code: 401, type: 'error', "message": "Authorization required" });
                         }

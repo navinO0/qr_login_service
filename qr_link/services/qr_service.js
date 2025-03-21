@@ -10,11 +10,11 @@ const runBasicQery = async(app) => {
 const createUser = async(app, userDetails) => {
     try {
 
-        const response = await app.knex.insert(userDetails).into('users').returning('*')
+        const response = await app.knex.insert(userDetails).into('users').returning('*');
         return response
         
     } catch (error) {
-     console.log(error)   
+        throw new Error("user creation failed :" + error);   
     }
 }
 
