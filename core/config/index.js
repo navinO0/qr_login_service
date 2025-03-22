@@ -1,6 +1,8 @@
 require("dotenv").config(); // Load environment variables
 
 const CONFIG = {
+    HOST: process.env.HOST || 'localhost',
+    PORT : process.env.PORT || 3009,
     APP_DB_CONFIG: {
         client: process.env.DB_CLIENT || 'postgres',
         pool: {
@@ -22,15 +24,16 @@ const CONFIG = {
 
     REDIS: {
             host: process.env.REDIS_HOST || "localhost", // Change to your Redis server host
-            port: process.env.REDIS_PORT || 6379, // Default Redis port
+        port: process.env.REDIS_PORT || 6379, // Default Redis port
+        QR_CODE_EXPIRY_IN_SECS : process.env.QR_CODE_EXPIRY_IN_SECS || 180
     },
 
     POSTGRES_CONFIG: {
         host: process.env.DB_HOST || 'localhost',
         user: process.env.DB_USER || 'danvin',
-        password: process.env.DB_PASSWORD || 'Password@123',
-        database: process.env.DB_DATABASE || 'testdb',
-        port: process.env.DB_PORT || '5432',
+        password: process.env.DB_PASSWORD || 'Pass',
+        database: process.env.DB_DATABASE || 'postgres',
+        port: process.env.DB_PORT || '5431',
     },
 
     SECURITY_KEYS: {

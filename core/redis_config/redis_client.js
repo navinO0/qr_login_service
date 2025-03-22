@@ -5,11 +5,6 @@ const CONFIG = require('../config')
 
 const redisClient = new Redis(CONFIG.REDIS);
 
-// redisClient.on("connect", () => console.log("Connected to Redis"));
-// redisClient.on("error", (err) => console.log("Redis Error:", err));
-
-// const Redis = require('ioredis');
-
 async function redisInitialise(config) {
   const redis = new Redis(config);
   

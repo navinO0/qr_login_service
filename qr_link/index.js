@@ -3,10 +3,6 @@ const { user_create_schema, user_login_schema, lgin_code_schema, login_with_code
 // const fastifyWebsocket = require('fastify-websocket');
 
 module.exports = async (app) => {
-    // Register WebSocket plugin
-    // app.register(fastifyWebsocket);
-
-    // REST API routes
     app.route({
         method: 'POST',
         url: '/public/create',

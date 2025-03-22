@@ -1,8 +1,4 @@
-const { errorHandler,
-    QPerrorParser,
-    replyWithErrorMessage,
-    validationErrorMessage,
-    replyWithSuccessMessage } = require('./error_handlers')
+
 function generateUniqueCode() {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; 
     let code = '';

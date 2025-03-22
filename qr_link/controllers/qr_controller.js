@@ -3,19 +3,9 @@
 const { generateUniqueCode, replyError, replySuccess } = require('../../core/core_funcs');
 const { decryptObject } = require('../../core/crypto');
 const { hashPassword, verifyPassword } = require('../../core/password_enc_desc');
-const { storeData, retrieveData, deleteData } = require('../../core/redis');
 const { setCacheValue, deleteCacheValue, getCacheValue } = require('../../core/redis_config/redis_client');
-const { runBasicQery, createUser, getUserDetails, getUserImage } = require('../services/qr_service')
+const { createUser, getUserDetails, getUserImage } = require('../services/qr_service')
 const jwt = require('jsonwebtoken');
-
-async function GET_USERS(request, reply) {
-    const body = request.body
-    const few = 'varuable'
-    console.log(few)
-    const response = await runBasicQery(this)
-    reply.send(response).status(200)
-}
-
 
 async function CREATE_USER(request, reply) {
     try {
@@ -108,7 +98,7 @@ async function GET_CODE(request, reply) {
     try {
         const token = request.token
         const code = generateUniqueCode()
-        await setCacheValue(code, token, 300)
+        await setCacheValue(code, token, this.CONFIG.REDIS.QR_CODE_EXPIRY_IN_SECS)
         return replySuccess(reply, { code })
     } catch (err) {
         return replyError(reply, err)
@@ -140,4 +130,4 @@ async function GET_IMAGE(request, reply) {
 }
 
 
-module.exports = { GET_USERS, CREATE_USER, LOGIN, GET_CODE, LOGIN_WITH_CODE, GET_IMAGE }
+module.exports = {CREATE_USER, LOGIN, GET_CODE, LOGIN_WITH_CODE, GET_IMAGE }

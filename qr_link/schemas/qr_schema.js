@@ -155,59 +155,7 @@ const image_schema = {
     security: [{ ApiToken: [] }]
 };
 
-const headers = {
-    withAuthorization: {
-        type: 'object',
-        additionalProperties: true,
-        required: ['Authorization'],
-        properties: {
-            Authorization: {
-                description: 'The x-auth-token generated after successful login',
-                type: 'string'
-            }
-        }
-    }
-};
 
-const validationErrorSchema = {
-    type: 'object',
-    additionalProperties: true,
-    properties: {
-        errors: {
-            type: 'array',
-            items: {
-                type: 'object',
-                properties: {
-                    property: { type: 'string' },
-                    message: { type: 'string' },
-                    code: { type: 'string' }
-                }
-            }
-        }
-    }
-};
-
-const commonErrorSchema = {
-    type: 'object',
-    additionalProperties: true,
-    properties: {
-        errors: {
-            type: 'array',
-            items: {
-                type: 'object',
-                additionalProperties: true,
-                properties: {
-                    code: { type: 'string' },
-                    message: { type: 'string' },
-                    error: {
-                        type: 'object',
-                        additionalProperties: true
-                    }
-                }
-            }
-        }
-    }
-};
 
 async function ajvCompiler(app, options) {
     const ajv = new Ajv({

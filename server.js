@@ -9,14 +9,11 @@ const helmet = require('@fastify/helmet');
 const swagger = require('@fastify/swagger');
 const swaggerUi = require('@fastify/swagger-ui');
 const os = require('os');
-const pino = require('pino');
 const { ajvCompiler } = require('./qr_link/schemas/qr_schema');
 const { v4: uuid } = require('uuid');
 const { knexClientCreate } = require('./core/qpf_knex_query_builder');
 const { validateAccessToken } = require('./core/token_generate_validate');
 const  CONFIG  = require('./core/config');
-const { requestContext } = require('./core/requestContext');
-const { appendPayloadToResponse } = require('./core/hooks/hooks');
 const { redisClientCreate } = require('./core/redis_config');
 
 function getAllRoutes(filePath, routes = []) {
@@ -59,14 +56,10 @@ async function serverSetup(swaggerURL) {
             disableRequestLogging: true,  // Disable request logging
             bodyLimit: 5000000, // Setting body limit to 5 MB
         });
-        // app.decorate('host_name', os.hostname());
         app.decorate('host_name', os.hostname());
         app.decorate('CONFIG', CONFIG)
-        // global access of logs logger object
         app.register(require('@fastify/sensible'));
-        // app.register(underPressure, underPressureConfig(swaggerURL));
         app.register(require('@fastify/formbody'));
-        // app.register(multipart, { limits: { fileSize: app.config.FILE_SERVICE?.FILE_UPLOAD_LIMIT || 5000000 } });
         app.register(cors);
         app.register(helmet, helmetConfig);
         app.register(swagger, swaggerConfig(swaggerURL));
@@ -78,30 +71,7 @@ async function serverSetup(swaggerURL) {
         app.addHook('onRequest', async (request, reply) => {
             return await validateAccessToken({ request }, reply, app);
         })
-
-        // app.addHook('preValidation', requestContext);
-        // if (!config.INSTANCE.INSTANCE_WSO2) {
-        //     app.addHook('preValidation', RBAC);
-        // }
-
-
-        // app.addHook('preValidation', validateSchema);
-        app.addHook('preSerialization', appendPayloadToResponse);
-        // app.addHook('onSend', onSend);
-        // app.addHook('onResponse', onResponse);
-        // if (config.INSTANCE.INSTANCE_WSO2) {
-        //     app.addHook('onRequest', async (request, reply) => {
-        //         return await validateWSO2AccessToken({ request }, reply, app);
-        //     })
-        // } else {
-        //     app.addHook('onRequest', async (request, reply) => {
-        //         return await validateAccessToken({ request }, reply, app);
-        //     })
-        // }
-        app.addHook('preValidation', requestContext);
         await ajvCompiler(app, {});
-
-        // setupGracefulShutdown ({ app: app });
         return app;
     } catch (err) {
         console.log(err);
@@ -160,58 +130,6 @@ process.on('uncaughtException', (err) => {
         process.exit(1)
     })
 })
-
-const underPressureConfig = (url) => {
-    url = url || 'qpf';
-    return {
-        exposeStatusRoute: {
-            routeResponseSchemaOpts: {
-                pg: { type: 'boolean' },
-                redis: { type: 'boolean' },
-                'cpu(%)': { type: 'number' },
-            },
-            url: url + "/public/status"
-        },
-        healthCheck: async function (app) {
-            // TODO: Checking the connectivity of pg, redis and cpu
-            function getCpuUsage() {
-                const currentUsage = process.cpuUsage();
-                const diff = {
-                    user: currentUsage.user - lastUsage.user,
-                    system: currentUsage.system - lastUsage.system
-                };
-                const percentUsage = ((100 * (diff.user + diff.system) / os.cpus().length) / 1000000).toFixed(2);
-                lastUsage = currentUsage;
-                return percentUsage;
-            }
-
-            let ser_health = {
-                pg: false,
-                redis: false,
-                'cpu(%)': getCpuUsage()
-            };
-
-            try {
-                ser_health.redis = app.redis.rClient.status === 'connect' || 'ready' ? true : false;
-                try {
-                    //Both primary and secondary dB must be healthy for the PG status to be true.
-                    await app.knex.raw('select 1+1 as result');
-                    await app.READ_DB.raw('select 1+1 as result');
-                    ser_health.pg = true;
-                } catch (error) {
-                    ser_health.pg = false;
-                }
-                return ser_health;
-            } catch (ex) {
-                return ser_health;
-            }
-        },
-        message: 'Under Pressure 😯'
-    };
-};
-
-
-
 
 module.exports = { getAllRoutes, serverSetup }
 

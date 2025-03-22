@@ -1,12 +1,5 @@
 'use strict'
 
-
-const runBasicQery = async(app) => {
-    const response = await app.knex.raw('select * from users limit 10');
-    return response.rows
-}
-
-
 const createUser = async(app, userDetails) => {
     try {
         const [response] = await app.knex('users')
@@ -40,4 +33,4 @@ const getUserImage = async (app, username) => {
     
 }
 
-module.exports = { runBasicQery, createUser, getUserDetails, getUserImage }
+module.exports = {createUser, getUserDetails, getUserImage }

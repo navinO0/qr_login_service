@@ -1,12 +1,9 @@
-const Fastify = require('fastify')
-
-
-const fastify = Fastify({ logger: true })
 const { serverSetup, getAllRoutes } = require('./server');
 const path = require('path');
 require('events').EventEmitter.defaultMaxListeners = 30;
+const CONFIG = require('./core/config');
 
-const PORT = 3009;
+const PORT = CONFIG.PORT;
 
 const urlPrefix = "/users";
 
@@ -27,7 +24,7 @@ const urlPrefix = "/users";
         }
 
         // Start the server
-        await server.listen({ port: PORT, host: '0.0.0.0' })
+        await server.listen({ port: PORT, host: CONFIG.HOST })
             .then((address) => {
                 console.log("Everything is Loaded..!");
                 console.log(
