@@ -75,6 +75,9 @@ const user_create_schema = {
                 maxLength: 255,
                 description: "User's last name",
                 example: "Doe"
+            },
+            profile_photo: {
+                type: "string",
             }
         },
         required: ["username", "password", "email"],  // Make username, password, and email required
@@ -143,6 +146,14 @@ const login_with_code = {
         additionalProperties: false
     }
 }
+
+const image_schema = {
+    tags: ['user'],
+    summary: "User Registration and Login",
+    description: `<h3>This API allows users to register, login, and manage their accounts.</h3>`,
+    rbac: ["*"],  // Roles or permissions (adjust as needed, e.g., ['admin', 'user'])
+    security: [{ ApiToken: [] }]
+};
 
 const headers = {
     withAuthorization: {
@@ -215,4 +226,4 @@ async function ajvCompiler(app, options) {
     });
 }
 
-module.exports = { qr_schema, ajvCompiler, user_create_schema, user_login_schema, lgin_code_schema, login_with_code }
+module.exports = { qr_schema, ajvCompiler, user_create_schema, user_login_schema, lgin_code_schema, login_with_code,image_schema }

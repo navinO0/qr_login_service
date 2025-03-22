@@ -14,9 +14,10 @@ const { ajvCompiler } = require('./qr_link/schemas/qr_schema');
 const { v4: uuid } = require('uuid');
 const { knexClientCreate } = require('./core/qpf_knex_query_builder');
 const { validateAccessToken } = require('./core/token_generate_validate');
-const { config } = require('./core/config');
+const  CONFIG  = require('./core/config');
 const { requestContext } = require('./core/requestContext');
 const { appendPayloadToResponse } = require('./core/hooks/hooks');
+const { redisClientCreate } = require('./core/redis_config');
 
 function getAllRoutes(filePath, routes = []) {
     const stats = fs.statSync(filePath);
@@ -49,25 +50,6 @@ const helmetConfig = {
     }
 }
 
-const APP_DB_CONFIG = {
-
-    client: 'postgres',
-    pool: {
-        min: parseInt(3),
-        max: parseInt(3000)
-    },
-    acquireConnectionTimeout: 30000,
-    connection: {
-        host: 'localhost',
-        user: 'danvin',
-        password: 'Password@123',
-        database: 'testdb',
-        port: '5432'
-    },
-    asyncStackTraces: false,
-    debug: true,
-    propagationError: false
-};
 
 async function serverSetup(swaggerURL) {
     try {
@@ -79,7 +61,7 @@ async function serverSetup(swaggerURL) {
         });
         // app.decorate('host_name', os.hostname());
         app.decorate('host_name', os.hostname());
-        app.decorate('config', config)
+        app.decorate('CONFIG', CONFIG)
         // global access of logs logger object
         app.register(require('@fastify/sensible'));
         // app.register(underPressure, underPressureConfig(swaggerURL));
@@ -91,7 +73,8 @@ async function serverSetup(swaggerURL) {
         app.register(swaggerUi, {
             routePrefix: swaggerURL + 'swagger/public/documentation', // This should be the same path as defined in swaggerConfig
         });
-        await knexClientCreate(app, APP_DB_CONFIG, 'knex');
+        await redisClientCreate(app, CONFIG.REDIS, 'redis')
+        await knexClientCreate(app, CONFIG.APP_DB_CONFIG, 'knex');
         app.addHook('onRequest', async (request, reply) => {
             return await validateAccessToken({ request }, reply, app);
         })

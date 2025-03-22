@@ -1,5 +1,5 @@
-const { CREATE_USER, LOGIN, GET_CODE, LOGIN_WITH_CODE } = require('./controllers/qr_controller');
-const { user_create_schema, user_login_schema, lgin_code_schema, login_with_code } = require('./schemas/qr_schema');
+const { CREATE_USER, LOGIN, GET_CODE, LOGIN_WITH_CODE, GET_IMAGE } = require('./controllers/qr_controller');
+const { user_create_schema, user_login_schema, lgin_code_schema, login_with_code, image_schema } = require('./schemas/qr_schema');
 // const fastifyWebsocket = require('fastify-websocket');
 
 module.exports = async (app) => {
@@ -33,5 +33,12 @@ module.exports = async (app) => {
         url: '/login/code/:code',
         schema: login_with_code,
         handler: LOGIN_WITH_CODE,
+    });
+
+    app.route({
+        method: 'GET',
+        url: '/get/image',
+        schema: image_schema,
+        handler: GET_IMAGE,
     });
 };

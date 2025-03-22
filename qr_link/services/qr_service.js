@@ -9,10 +9,11 @@ const runBasicQery = async(app) => {
 
 const createUser = async(app, userDetails) => {
     try {
+        const [response] = await app.knex('users')
+    .insert(userDetails)
+    .returning(['username', 'email', 'mobile', 'first_name', 'middle_name', 'last_name']);
 
-        const response = await app.knex.insert(userDetails).into('users').returning('*');
-        return response
-        
+return response;
     } catch (error) {
         throw new Error("user creation failed :" + error);   
     }
@@ -28,4 +29,15 @@ const getUserDetails = async (app, username) => {
     }
     
 }
-module.exports = { runBasicQery, createUser, getUserDetails }
+
+const getUserImage = async (app, username) => {
+    try {
+        const user = await app.knex.raw(`select profile_photo from users where username = '${username}';`)
+        return user.rows ? user.rows[0] : {}
+    } catch (err) {
+        console.log(err)
+    }
+    
+}
+
+module.exports = { runBasicQery, createUser, getUserDetails, getUserImage }

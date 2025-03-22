@@ -4,7 +4,7 @@ const crypto = require("crypto");
 
 function decryptData(app, encryptedString) {
     try {
-        const aesSecKeyHex = app.config.KEY_HEX;
+        const aesSecKeyHex = app.CONFIG.SECURITY_KEYS.KEY_HEX;
         const aesSecKey = Buffer.from(aesSecKeyHex, "hex");
         // Extract IV and encrypted text
         const [ivBase64, encryptedBase64] = encryptedString.split(":");
@@ -38,11 +38,13 @@ function decryptData(app, encryptedString) {
 }
 
 // Decrypt all object values
-function decryptObject(app, obj) {
+function decryptObject(app, obj, dec_keys) {
     try {
         for (let key in obj) {
-            if (typeof obj[key] === "string") {
-                obj[key] = decryptData(app, obj[key]);
+            if (dec_keys.includes(key)) {
+                if (typeof obj[key] === "string") {
+                    obj[key] = decryptData(app, obj[key]);
+                }
             }
         }
         return obj;
