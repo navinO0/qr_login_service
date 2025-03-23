@@ -88,6 +88,7 @@ async function LOGIN(request, reply) {
             JWT_SECRET,
             { expiresIn: '1h' }
         );
+        await setCacheValue(user.username+"_token", token, this.CONFIG.REDIS.TOKEN_EXPIRY_IN_SECS)
         return replySuccess(reply, { token })
     } catch (err) {
         return replyError(reply, err)
@@ -112,7 +113,12 @@ async function LOGIN_WITH_CODE(request, reply) {
         if (!cachedData) {
             return replyError(reply, { message: 'invalid code or code has been expired' })
         }
-        deleteCacheValue(loginCode)
+        const getDevicesCount = await getCacheValue(cachedData)
+        if (getDevicesCount && parseInt(getDevicesCount) > 2) {
+            return replyError(reply, { message: 'device limit exceeded' })
+        }
+        // deleteCacheValue(loginCode)
+        await setCacheValue(cachedData, (getDevicesCount ? parseInt(getDevicesCount) + 1 : 1), this.CONFIG.REDIS.TOKEN_EXPIRY_IN_SECS)
         return replySuccess(reply, { message: 'login success', token: cachedData })
     } catch (err) {
         return replyError(reply, err)

@@ -1,5 +1,6 @@
 
 const jwt = require('jsonwebtoken');
+const { getCacheValue } = require('../redis_config/redis_client');
 
 
 
@@ -55,6 +56,10 @@ async function validateAccessToken({ request }, reply, app) {
                         request.token = token
                         request.user_info = decoded
                         if (!decoded || Object.keys(decoded).length === 0) {
+                            return reply.code(401).send({ code: 401, type: 'error', "message": "Authorization required" });
+                        }
+                        const chached_token = await getCacheValue(decoded.username + "_token")
+                        if (chached_token !== token) {
                             return reply.code(401).send({ code: 401, type: 'error', "message": "Authorization required" });
                         }
 

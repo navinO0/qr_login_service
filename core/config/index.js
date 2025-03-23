@@ -1,7 +1,7 @@
 require("dotenv").config(); // Load environment variables
 
 const CONFIG = {
-    HOST: process.env.HOST || 'localhost',
+    HOST: process.env.HOST || '0.0.0.0',
     PORT : process.env.PORT || 3009,
     APP_DB_CONFIG: {
         client: process.env.DB_CLIENT || 'postgres',
@@ -23,9 +23,10 @@ const CONFIG = {
     },
 
     REDIS: {
-            host: process.env.REDIS_HOST || "localhost", // Change to your Redis server host
+        host: process.env.REDIS_HOST || "localhost", // Change to your Redis server host
         port: process.env.REDIS_PORT || 6379, // Default Redis port
-        QR_CODE_EXPIRY_IN_SECS : process.env.QR_CODE_EXPIRY_IN_SECS || 180
+        QR_CODE_EXPIRY_IN_SECS: process.env.QR_CODE_EXPIRY_IN_SECS || 180,
+        TOKEN_EXPIRY_IN_SECS: process.env.TOKEN_EXPIRY_IN_SECS || 3600
     },
 
     POSTGRES_CONFIG: {
