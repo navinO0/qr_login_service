@@ -4,6 +4,7 @@ const { generateUniqueCode, replyError, replySuccess } = require('../../core/cor
 const { decryptObject } = require('../../core/crypto');
 const { hashPassword, verifyPassword } = require('../../core/password_enc_desc');
 const { setCacheValue, deleteCacheValue, getCacheValue } = require('../../core/redis_config/redis_client');
+const { genereateToke } = require('../../core/token_generate_validate');
 const { createUser, getUserDetails, getUserImage } = require('../services/qr_service')
 const jwt = require('jsonwebtoken');
 
@@ -33,11 +34,15 @@ async function CREATE_USER(request, reply) {
         if (!mobilePattern.test(mobile)) {
             throw new Error("Invalid mobile number. Must be exactly 10 digits.");
         }
-        if (!namePattern.test(first_name) || !namePattern.test(last_name)) {
+        if (!namePattern.test(first_name)) {
             throw new Error("First name and last name must be between 2-30 alphabetic characters.");
         }
         if (middle_name && !namePattern.test(middle_name)) {
             throw new Error("Middle name must be between 2-30 alphabetic characters (if provided).");
+        }
+
+        if (last_name &&  !namePattern.test(last_name)) {
+            throw new Error("last name must be between 2-30 alphabetic characters (if provided).");
         }
 
         // Hash the password
@@ -57,11 +62,7 @@ async function CREATE_USER(request, reply) {
 
         // Create user in the system
         const userCreateResponse = await createUser(this, userDetails);
-        const token = jwt.sign(
-            userCreateResponse,
-            JWT_SECRET,
-            { expiresIn: '1h' }
-        );
+        const token = genereateToke(this, userCreateResponse)
         return replySuccess(reply, { token });
     } catch (err) {
         return replyError(reply, { message: err.message });
@@ -72,7 +73,6 @@ async function CREATE_USER(request, reply) {
 async function LOGIN(request, reply) {
     try {
         const body = request.body;
-        const JWT_SECRET = this.CONFIG.SECURITY_KEYS.JWT_SECRET;
         const { username, password } = decryptObject(this, body,['username','password'])
         const user = await getUserDetails(this, username)
         if (!user) {
@@ -83,12 +83,7 @@ async function LOGIN(request, reply) {
             return replyError(reply, { message: 'Username or password is incorrect' })
         }
         delete user.password
-        const token = jwt.sign(
-            user,
-            JWT_SECRET,
-            { expiresIn: '1h' }
-        );
-        await setCacheValue(user.username+"_token", token, this.CONFIG.REDIS.TOKEN_EXPIRY_IN_SECS)
+        const token = genereateToke(this, user)
         return replySuccess(reply, { token })
     } catch (err) {
         return replyError(reply, err)

@@ -1,37 +1,17 @@
 
 const jwt = require('jsonwebtoken');
-const { getCacheValue } = require('../redis_config/redis_client');
+const { getCacheValue, setCacheValue } = require('../redis_config/redis_client');
 
-
-
-
-// Secret key for JWT (in a real-world application, store this in an environment variable)
-const JWT_SECRET = process.env.JWT_SECRET;
-
-
-const genereateToke = (app, userdata) => {
+const genereateToke = async(app, userdata) => {
 
     // Generate a JWT token
     const token = jwt.sign(
         userdata,
-        JWT_SECRET,
+        app.CONFIG.SECURITY_KEYS.JWT_SECRET,
         { expiresIn: '1h' } 
     );
-
+    await setCacheValue(user.username+"_token", token, this.CONFIG.REDIS.TOKEN_EXPIRY_IN_SECS)
     return token
-}
-
-const validateToken = (token) => {
-    if (!token) {
-        return res.status(401).json({ message: 'No token provided' });
-    }
-    try {
-        // Verify the token
-        const decoded = jwt.verify(token, JWT_SECRET);
-        return decoded
-    } catch (err) {
-        return { status: 401, message: 'token validateion failed' }
-    }
 }
 
 
@@ -79,22 +59,5 @@ async function validateAccessToken({ request }, reply, app) {
     }
 };
 
-
-
-
-// async function validateTokenResponse(app, tokenKey, tokenDetails, token) {
-//     try {
-//         if (tokenDetails.token_type === 'EXPIRY_VALIDATE' && (Number(tokenDetails.token_expiry_time) > Number(new Date().getTime()))) {
-//             return token;
-//         } else if (app.config?.INSTANCE?.TOKEN_WITH_REDIS) {
-//             return await QPF_getCachingValue(app, tokenKey);
-//         } else if (Number(tokenDetails.token_expiry_time) > Number(new Date().getTime())) {
-//             return token;
-//         }
-//     } catch (error) {
-//         throw QPerrorParser(error);
-//     }
-
-// }
 
 module.exports = { genereateToke, validateAccessToken }
