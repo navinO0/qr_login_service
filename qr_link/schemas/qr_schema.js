@@ -3,7 +3,7 @@
 const Ajv = require("ajv");
 const AjvErrors = require("ajv-errors");
 const addFormats = require("ajv-formats");
-const { errorSchemas } = require("../../core/qpf_schema");
+const { errorSchemas } = require("../../core/schemas");
 
 const qr_schema = {
     tags: ['login'],
