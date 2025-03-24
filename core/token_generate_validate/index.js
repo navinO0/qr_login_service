@@ -1,7 +1,7 @@
 
 const jwt = require('jsonwebtoken');
 const { getCacheValue, setCacheValue } = require('../redis_config/redis_client');
-
+const CONFIG = require('../config');
 const genereateToke = async(app, userdata) => {
 
     // Generate a JWT token
@@ -10,7 +10,7 @@ const genereateToke = async(app, userdata) => {
         app.CONFIG.SECURITY_KEYS.JWT_SECRET,
         { expiresIn: '1h' } 
     );
-    await setCacheValue(user.username+"_token", token, this.CONFIG.REDIS.TOKEN_EXPIRY_IN_SECS)
+    await setCacheValue(userdata.username+"_token", token, CONFIG.REDIS.TOKEN_EXPIRY_IN_SECS)
     return token
 }
 

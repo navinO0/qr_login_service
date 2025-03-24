@@ -62,7 +62,7 @@ async function CREATE_USER(request, reply) {
 
         // Create user in the system
         const userCreateResponse = await createUser(this, userDetails);
-        const token = genereateToke(this, userCreateResponse)
+        const token = await genereateToke(this, userCreateResponse)
         return replySuccess(reply, { token });
     } catch (err) {
         return replyError(reply, { message: err.message });
@@ -83,7 +83,7 @@ async function LOGIN(request, reply) {
             return replyError(reply, { message: 'Username or password is incorrect' })
         }
         delete user.password
-        const token = genereateToke(this, user)
+        const token = await genereateToke(this, user)
         return replySuccess(reply, { token })
     } catch (err) {
         return replyError(reply, err)
