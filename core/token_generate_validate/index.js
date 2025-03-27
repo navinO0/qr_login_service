@@ -15,7 +15,7 @@ const genereateToke = async(app, userdata) => {
 }
 
 
-const APIs = ["login", "logout", "signup", "public", "internal"]
+const APIs = ["login", "logout", "signup", "public", "internal", "socket.io"]
 
 
 async function validateAccessToken({ request }, reply, app) {
@@ -52,7 +52,7 @@ async function validateAccessToken({ request }, reply, app) {
             }
         } else {
             // updateHeaders(request.headers, {});
-            console.log("this api doesn't require token")
+            // console.log("this api doesn't require token")
         }
     } catch (error) {
         return reply.code(401).send({ code: 401, type: 'error', "message": "Authorization required" });

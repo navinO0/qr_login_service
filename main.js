@@ -10,7 +10,7 @@ const urlPrefix = "/users";
 
 (async () => {
     try {
-        const parentDirs = ['qr_link'];
+        const parentDirs = ['qr_link', "whiteboard"];
         const server = await serverSetup(urlPrefix); // Initialize server before using it
 
         // Using for...of to handle async properly

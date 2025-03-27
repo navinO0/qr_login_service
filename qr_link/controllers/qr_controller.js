@@ -130,5 +130,27 @@ async function GET_IMAGE(request, reply) {
     }
 }
 
+async function GET_ROOM_ID(request, reply) {
+    try {
+        const token = request.token
+        const code = generateUniqueCode()
+        await setCacheValue(code, token, this.CONFIG.REDIS.QR_CODE_EXPIRY_IN_SECS)
+        return replySuccess(reply, { code })
+    } catch (err) {
+        return replyError(reply, err)
+    }
+}
 
-module.exports = {CREATE_USER, LOGIN, GET_CODE, LOGIN_WITH_CODE, GET_IMAGE }
+async function SAVE_ROOM_ID(request, reply) {
+    try {
+        const { roomId, paths } = request.body;
+        await redis.set(`whiteboard:${roomId}`, JSON.stringify(paths));
+        await setCacheValue((`whiteboard:${roomId}`, JSON.stringify(paths), this.CONFIG.REDIS.WHITEBOARD_EXPIRY_IN_SECS))
+        return replySuccess(reply, { message: 'success' })
+    } catch (err) {
+        return replyError(reply, err)
+    }
+}
+
+
+module.exports = {CREATE_USER, LOGIN, GET_CODE, LOGIN_WITH_CODE, GET_IMAGE,GET_ROOM_ID,SAVE_ROOM_ID }

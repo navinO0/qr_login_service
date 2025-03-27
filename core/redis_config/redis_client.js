@@ -34,7 +34,7 @@ async function setCacheValue(key, value, expiry = 3600) {
     await redisClient.set(key, JSON.stringify(value), "EX", expiry);
     return "success";
   } catch (error) {
-    cosole.log("Redis Set Error:", error);
+    console.log("Redis Set Error:", error);
     return "error";
   }
 }

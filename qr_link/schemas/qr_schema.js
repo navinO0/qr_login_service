@@ -155,7 +155,44 @@ const image_schema = {
     security: [{ ApiToken: [] }]
 };
 
+const room_id_schema = {
+    tags: ['user'],
+    summary: "User Registration and Login",
+    description: `<h3>This API allows users to register, login, and manage their accounts.</h3>`,
+    // rbac: ["*"],  // Roles or permissions (adjust as needed, e.g., ['admin', 'user'])
+    // security: [{ ApiToken: [] }],
+    params: {
+        type: "object",
+        properties: {
+            roomId: {
+                type: "string",
+            },
+        },
+        required: ["roomId"],
+        additionalProperties: false
+    }
+}
 
+const save_room_schema = {
+    tags: ['user'],
+    summary: "User Registration and Login",
+    description: `<h3>This API allows users to register, login, and manage their accounts.</h3>`,
+    // rbac: ["*"],  // Roles or permissions (adjust as needed, e.g., ['admin', 'user'])
+    // security: [{ ApiToken: [] }],
+    body: {
+        type: "object",
+        properties: {
+            roomId: {
+                type: "string",
+            },
+            paths: {
+                type: "string",
+            },
+        },
+        required: [],  // Make username, password, and email required
+        additionalProperties: false
+    }
+};
 
 async function ajvCompiler(app, options) {
     const ajv = new Ajv({
@@ -174,4 +211,4 @@ async function ajvCompiler(app, options) {
     });
 }
 
-module.exports = { qr_schema, ajvCompiler, user_create_schema, user_login_schema, lgin_code_schema, login_with_code,image_schema }
+module.exports = { qr_schema, ajvCompiler, user_create_schema, user_login_schema, lgin_code_schema, login_with_code,image_schema,room_id_schema,save_room_schema}
