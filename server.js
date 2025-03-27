@@ -20,6 +20,7 @@ const CONFIG = require('./core/config');
 const { redisClientCreate } = require('./core/redis_config');
 const throttle = require("lodash/throttle");
 const { setCacheValue, deleteCacheValue } = require('./core/redis_config/redis_client');
+const pako = require("pako");
 
 
 function getAllRoutes(filePath, routes = []) {
@@ -131,24 +132,61 @@ async function serverSetup(swaggerURL) {
 //     console.log("🚀 Server running on http://localhost:4000");
 // });
 
-io.on("connection", (socket) => {
-    console.log("User connected:", socket.id);
+let whiteboardData = {};
+let cursors = {};
 
-    socket.on("join-room", async (roomId) => {
+io.on("connection", (socket) => {
+    let customUserId = socket.handshake.query.userId || `guest_${Math.floor(Math.random() * 10000)}`;
+
+    console.log("User connected:", customUserId);
+
+    // Send the assigned custom ID back to the client
+    io.to(socket.id).emit("custom-id", customUserId);
+
+    socket.on("join-room", (roomId) => {
         socket.join(roomId);
-        console.log(`User joined room: ${roomId}`);
+        console.log(`User ${customUserId} joined room: ${roomId}`);
+
+        // Initialize room data if not present
+        if (!whiteboardData[roomId]) whiteboardData[roomId] = [];
+        // if (!cursors[roomId]) cursors[roomId] = {};
+
+        // Send existing drawing data to the new user
+        // const compressedData = pako.deflate(JSON.stringify(whiteboardData[roomId]), { to: "string" });
+        // io.to(socket.id).emit("sync", compressedData);
     });
 
-    socket.on("draw", ({ roomId, paths }) => io.to(roomId).emit("draw", paths));
-    socket.on("undo", (roomId) => io.to(roomId).emit("undo"));
-    socket.on("redo", (roomId) => io.to(roomId).emit("redo"));
-    socket.on("clear", (roomId) => io.to(roomId).emit("clear"));
-    socket.on("cursor-move", ({ roomId, userId, cursor }) => socket.to(roomId).emit("cursor-move", { userId, cursor }));
+    // Handle drawing updates
+    socket.on("draw", ({ roomId, paths }) => {
+        whiteboardData[roomId] = paths;
+        socket.to(roomId).emit("draw", paths);
+    })
 
-    socket.on("disconnect", () => console.log("User disconnected:", socket.id));
+    // Handle clearing the whiteboard
+    socket.on("clear", (roomId) => {
+        whiteboardData[roomId] = [];
+        socket.to(roomId).emit("clear");
+    });
+
+    // Handle undo/redo
+    socket.on("undo", (roomId) => socket.to(roomId).emit("undo"));
+    socket.on("redo", (roomId) => socket.to(roomId).emit("redo"));
+
+    // Handle cursor movement
+    socket.on("cursor-move", ({ roomId, userId, cursor }) => {
+        if (!cursors[roomId]) cursors[roomId] = {};
+        cursors[roomId][userId] = cursor;
+
+        socket.to(roomId).emit("cursor-move", { userId, cursor });
+    });
+
+    // Handle user disconnect
+    socket.on("disconnect", () => {
+        console.log(`User disconnected: ${customUserId}`);
+    });
 });
 
-httpServer.listen(3009, () => console.log("🚀 Server running on http://localhost:4000"));
+httpServer.listen(3008, () => console.log("🚀 Server running on http://localhost:4000"));
 
         return app;
     } catch (err) {
