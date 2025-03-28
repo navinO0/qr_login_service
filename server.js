@@ -132,8 +132,13 @@ async function serverSetup(swaggerURL) {
 //     console.log("🚀 Server running on http://localhost:4000");
 // });
 
+// let whiteboardData = {};
+//         let cursors = {};
+
 let whiteboardData = {};
 let cursors = {};
+let roomLocks = {}; // Track which user is drawing
+        
 
 io.on("connection", (socket) => {
     let customUserId = socket.handshake.query.userId || `guest_${Math.floor(Math.random() * 10000)}`;
@@ -154,11 +159,13 @@ io.on("connection", (socket) => {
         // Send existing drawing data to the new user
         // const compressedData = pako.deflate(JSON.stringify(whiteboardData[roomId]), { to: "string" });
         // io.to(socket.id).emit("sync", compressedData);
+        io.to(roomId).emit("lock", roomLocks[roomId]);
     });
 
     // Handle drawing updates
     socket.on("draw", ({ roomId, paths }) => {
         whiteboardData[roomId] = paths;
+        console.log(`User ${customUserId} drew on room: ${roomId}`);
         socket.to(roomId).emit("draw", paths);
     })
 
@@ -179,6 +186,24 @@ io.on("connection", (socket) => {
 
         socket.to(roomId).emit("cursor-move", { userId, cursor });
     });
+
+      // Handle drawing lock
+  socket.on("lock", ({ roomId, userId }) => {
+    if (!roomLocks[roomId]) {
+      roomLocks[roomId] = userId;
+      io.to(roomId).emit("lock", userId);
+      console.log(`User ${userId} locked the whiteboard in room: ${roomId}`);
+    }
+  });
+
+  // Handle unlocking
+  socket.on("unlock", (roomId) => {
+    if (roomLocks[roomId]) {
+      console.log(`User ${roomLocks[roomId]} unlocked the whiteboard in room: ${roomId}`);
+      roomLocks[roomId] = null;
+      io.to(roomId).emit("unlock");
+    }
+  });
 
     // Handle user disconnect
     socket.on("disconnect", () => {
