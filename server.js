@@ -71,7 +71,10 @@ async function serverSetup(swaggerURL) {
         app.decorate('CONFIG', CONFIG);
         app.register(require('@fastify/sensible'));
         app.register(require('@fastify/formbody'));
-        app.register(cors);
+        app.register(fastifyCors, {
+            origin: true, 
+            credentials: true, 
+        });
         app.register(helmet, helmetConfig);
         app.register(swagger, swaggerConfig(swaggerURL));
         app.register(swaggerUi, {
