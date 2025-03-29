@@ -38,10 +38,10 @@ async function validateAccessToken({ request }, reply, app) {
                         if (!decoded || Object.keys(decoded).length === 0) {
                             return reply.code(401).send({ code: 401, type: 'error', "message": "Authorization required" });
                         }
-                        const chached_token = await getCacheValue(decoded.username + "_token")
-                        if (chached_token !== token) {
-                            return reply.code(401).send({ code: 401, type: 'error', "message": "Authorization required" });
-                        }
+                        // const chached_token = await getCacheValue(decoded.username + "_token")
+                        // if (chached_token !== token) {
+                        //     return reply.code(401).send({ code: 401, type: 'error', "message": "Authorization required" });
+                        // }
 
                     } catch (error) {
                         throw error;

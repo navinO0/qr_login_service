@@ -19,7 +19,7 @@ const { validateAccessToken } = require('./core/token_generate_validate');
 const CONFIG = require('./core/config');
 const { redisClientCreate } = require('./core/redis_config');
 const throttle = require("lodash/throttle");
-const { setCacheValue, deleteCacheValue } = require('./core/redis_config/redis_client');
+const { setCacheValue, deleteCacheValue, getCacheValue } = require('./core/redis_config/redis_client');
 const pako = require("pako");
 
 
@@ -88,52 +88,6 @@ async function serverSetup(swaggerURL) {
 
         await ajvCompiler(app, {});
 
-        // WebSocket Events
-       
-// io.on("connection", (socket) => {
-//     console.log("User connected:", socket.id);
-
-//     socket.on("join-room", async (roomId) => {
-//         socket.join(roomId);
-//         console.log(`User joined room: ${roomId}`);
-
-//         // Load cached data if available
-//         const cachedPaths = await redis.get(`whiteboard:${roomId}`);
-//         if (cachedPaths) {
-//             socket.emit("draw", JSON.parse(cachedPaths));
-//         }
-//     });
-
-//     socket.on("draw", async ({ roomId, paths }) => {
-//         // await setCacheValue(`whiteboard:${roomId}`, JSON.stringify(paths), "EX", 3600);
-//         io.to(roomId).emit("draw", paths);
-//     });
-
-//     socket.on("undo", (roomId) => io.to(roomId).emit("undo"));
-//     socket.on("redo", (roomId) => io.to(roomId).emit("redo"));
-
-//     socket.on("clear", async (roomId) => {
-//         // await deleteCacheValue(`whiteboard:${roomId}`);
-//         io.to(roomId).emit("clear");
-//     });
-
-//     socket.on(
-//         "cursor-move",
-//         throttle(({ roomId, userId, cursor }) => {
-//             io.to(roomId).emit("cursor-move", { userId, cursor });
-//         }, 200) // Reduced throttle for smoother cursor movement
-//     );
-
-//     socket.on("disconnect", () => console.log("User disconnected:", socket.id));
-// });
-
-// // Start the server with WebSocket support
-// httpServer.listen(4000, () => {
-//     console.log("🚀 Server running on http://localhost:4000");
-// });
-
-// let whiteboardData = {};
-//         let cursors = {};
 
 let whiteboardData = {};
 let cursors = {};
@@ -143,7 +97,7 @@ let roomLocks = {}; // Track which user is drawing
 io.on("connection", (socket) => {
     let customUserId = socket.handshake.query.userId || `guest_${Math.floor(Math.random() * 10000)}`;
 
-    console.log("User connected:", customUserId);
+    // console.log("User connected:", customUserId);
 
     // Send the assigned custom ID back to the client
     io.to(socket.id).emit("custom-id", customUserId);
@@ -165,7 +119,7 @@ io.on("connection", (socket) => {
     // Handle drawing updates
     socket.on("draw", ({ roomId, paths }) => {
         whiteboardData[roomId] = paths;
-        console.log(`User ${customUserId} drew on room: ${roomId}`);
+        // console.log(`User ${customUserId} drew on room: ${roomId}`);
         socket.to(roomId).emit("draw", paths);
     })
 
@@ -202,8 +156,18 @@ io.on("connection", (socket) => {
       console.log(`User ${roomLocks[roomId]} unlocked the whiteboard in room: ${roomId}`);
       roomLocks[roomId] = null;
       io.to(roomId).emit("unlock");
-    }
+      }
   });
+    
+    socket.on("message", async ({ id,roomId, userId, message, time }) => {
+        console.log(`User ${userId} sent a message "${message}" in room: ${roomId} ${roomId, userId, message, time}`);
+        const newMessage = { id, userId, message, time };
+        let messages = await getCacheValue(`chat:room:${roomId}`);
+        messages = messages ? JSON.parse(messages) : [];
+        messages.push(newMessage);
+         setCacheValue(`chat:room:${roomId}`, JSON.stringify(messages));
+        io.to(roomId).emit("message", { id, userId, message, time })
+    });
 
     // Handle user disconnect
     socket.on("disconnect", () => {

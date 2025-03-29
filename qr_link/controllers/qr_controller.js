@@ -134,7 +134,7 @@ async function GET_ROOM_ID(request, reply) {
     try {
         const token = request.token
         const code = generateUniqueCode()
-        await setCacheValue(code, token, this.CONFIG.REDIS.QR_CODE_EXPIRY_IN_SECS)
+        await getCacheValue(code, token, this.CONFIG.REDIS.QR_CODE_EXPIRY_IN_SECS)
         return replySuccess(reply, { code })
     } catch (err) {
         return replyError(reply, err)

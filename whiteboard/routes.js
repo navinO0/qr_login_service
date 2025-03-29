@@ -34,5 +34,5 @@ const io = new Server(httpServer, { cors: { origin: "*" } });
 
 
 module.exports = async (app) => {
-    app.register(loginRoutes, { prefix: '/login' });
+    app.register(loginRoutes, { prefix: '/wb' });
 };
