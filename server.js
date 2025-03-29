@@ -21,6 +21,7 @@ const { redisClientCreate } = require('./core/redis_config');
 const throttle = require("lodash/throttle");
 const { setCacheValue, deleteCacheValue, getCacheValue } = require('./core/redis_config/redis_client');
 const pako = require("pako");
+const fastifyCors = require("@fastify/cors");
 
 
 function getAllRoutes(filePath, routes = []) {
