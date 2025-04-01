@@ -36,7 +36,6 @@ const user_create_schema = {
                 minLength: 3,
                 maxLength: 255,
                 description: "Unique username for the user",
-                // pattern: "^[a-zA-Z0-9_]+$",  // Only alphanumeric characters and underscores allowed
                 example: "john_doe123"
             },
             password: {
@@ -47,8 +46,6 @@ const user_create_schema = {
             },
             email: {
                 type: "string",
-                // format: "email",  // Validates the email format
-                // pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",  // Regex to validate email
                 description: "User's email address (unique)",
                 example: "john.doe@example.com"
             },
@@ -201,8 +198,7 @@ async function ajvCompiler(app, options) {
         coerceTypes: true,
         allErrors: true,
         allowUnionTypes: true,
-        // Additional options go here
-        strict: false // Example additional option
+        strict: false 
     });
     AjvErrors(ajv);
     addFormats(ajv);
@@ -211,4 +207,41 @@ async function ajvCompiler(app, options) {
     });
 }
 
-module.exports = { qr_schema, ajvCompiler, user_create_schema, user_login_schema, lgin_code_schema, login_with_code,image_schema,room_id_schema,save_room_schema}
+const register_google_user_schema = {
+    tags: ['user'],
+    summary: "User Registration and Login",
+    description: `<h3>This API allows users to register, login, and manage their accounts.</h3>`,
+    rbac: ["*"],  
+    body: {
+        type: "object",
+        properties: {
+            username: {
+                type: "string",
+                minLength: 3,
+                maxLength: 255,
+                description: "Unique username for the user",
+                example: "john_doe123"
+            },
+            email: {
+                type: "string",
+                // format: "email",  
+                description: "User's email address (unique)",
+                example: "john.doe@example.com"
+            },
+            first_name: {
+                type: "string",
+                maxLength: 255,
+                description: "User's first name",
+                example: "John"
+            },
+            profile_photo: {
+                type: "string",
+            }
+        },
+        required: ["username"],  
+        additionalProperties: false
+    }
+};
+
+
+module.exports = { qr_schema, ajvCompiler, user_create_schema, user_login_schema, lgin_code_schema, login_with_code,image_schema,room_id_schema,save_room_schema, register_google_user_schema}

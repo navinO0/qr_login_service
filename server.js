@@ -121,11 +121,29 @@ io.on("connection", (socket) => {
     });
 
     // Handle drawing updates
-    socket.on("draw", ({ roomId, paths }) => {
+    socket.on("draw", async ({ roomId, userId, paths }) => {
+      
         whiteboardData[roomId] = paths;
-        // console.log(`User ${customUserId} drew on room: ${roomId}`);
-        socket.to(roomId).emit("draw", paths);
-    })
+        console.log(`User ${userId} drew on room: ${roomId}`);
+        const strokes = await getCacheValue(`Room:strokes:${roomId}`);
+        if (!strokes) {
+            await setCacheValue(`Room:strokes:${roomId}`, JSON.stringify([paths])); 
+        } else {
+            const existingStrokes = JSON.parse(strokes); 
+            const newStrokes = [...existingStrokes, paths]; 
+            await setCacheValue(`Room:strokes:${roomId}`, JSON.stringify(newStrokes)); 
+        }
+        if (!roomLocks[roomId]) {
+            roomLocks[roomId] = userId
+        } else {
+            roomLocks[roomId] = userId
+            delete roomLocks[roomId]
+            socket.to(roomId).emit("draw", paths);
+        }
+        console.log(roomLocks)
+        
+    });
+    
 
     // Handle clearing the whiteboard
     socket.on("clear", (roomId) => {
@@ -148,9 +166,10 @@ io.on("connection", (socket) => {
       // Handle drawing lock
   socket.on("lock", ({ roomId, userId }) => {
     if (!roomLocks[roomId]) {
-      roomLocks[roomId] = userId;
+        roomLocks[roomId] = userId;
+        console.log(`User ${userId} locked the whiteboard in room: ${roomId}`);
       io.to(roomId).emit("lock", userId);
-      console.log(`User ${userId} locked the whiteboard in room: ${roomId}`);
+      
     }
   });
 

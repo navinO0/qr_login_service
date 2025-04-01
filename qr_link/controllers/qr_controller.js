@@ -11,7 +11,6 @@ const jwt = require('jsonwebtoken');
 async function CREATE_USER(request, reply) {
     try {
         const body = request.body;
-        const JWT_SECRET = this.CONFIG.SECURITY_KEYS.JWT_SECRET;
         // Decrypt the incoming request body
         const { username, password, email, mobile, first_name, last_name, middle_name, profile_photo } = decryptObject(this, body,['username','email','mobile','first_name','middle_name', "password", 'last_name']);
         const user = await getUserDetails(this, username)
@@ -152,5 +151,31 @@ async function SAVE_ROOM_ID(request, reply) {
     }
 }
 
+async function REGISTER_GOOGLE_AUTH(request, reply) {
+    try {
+        const body = request.body;
+        // Decrypt the incoming request body
+        const { username, email,first_name, profile_photo } = decryptObject(this, body,['username','email','first_name']);
+        const user = await getUserDetails(this, username)
+        if (user && user !== "") {
+            replySuccess(reply, { message: "User already registered" })
+        }
 
-module.exports = {CREATE_USER, LOGIN, GET_CODE, LOGIN_WITH_CODE, GET_IMAGE,GET_ROOM_ID,SAVE_ROOM_ID }
+        const userDetails = {
+            username,
+            email,
+            first_name,
+            profile_photo,
+            password : ''
+        };
+
+        // Create user in the system
+        await createUser(this, userDetails);
+        return replySuccess(reply, { message: 'success' })
+    } catch (err) {
+        return replyError(reply, err)
+    }
+}
+
+
+module.exports = {CREATE_USER, LOGIN, GET_CODE, LOGIN_WITH_CODE, GET_IMAGE,GET_ROOM_ID,SAVE_ROOM_ID, REGISTER_GOOGLE_AUTH }

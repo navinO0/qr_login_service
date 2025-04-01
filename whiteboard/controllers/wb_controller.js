@@ -8,8 +8,9 @@ const { setCacheValue, getCacheValue } = require('../../core/redis_config/redis_
 async function GET_ROOM_ID(request, reply) {
     try {
         const room_id = request.params.roomId
-        const data = await getCacheValue(`chat:room:${room_id}`);
-        return replySuccess(reply,(data ? JSON.parse(data) : []))
+        const messages = await getCacheValue(`chat:room:${room_id}`);
+        // const strokes = await getCacheValue(`Room:strokes:${room_id}`)
+        return replySuccess(reply, { messages: (messages ? JSON.parse(messages) : []), strokes: (strokes ? JSON.parse(strokes) : [])})
     } catch (err) {
         return replyError(reply, err)
     }
