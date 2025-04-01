@@ -10,7 +10,7 @@ async function GET_ROOM_ID(request, reply) {
         const room_id = request.params.roomId
         const messages = await getCacheValue(`chat:room:${room_id}`);
         // const strokes = await getCacheValue(`Room:strokes:${room_id}`)
-        return replySuccess(reply, { messages: (messages ? JSON.parse(messages) : []), strokes: (strokes ? JSON.parse(strokes) : [])})
+        return replySuccess(reply, { messages: (messages ? JSON.parse(messages) : [])})
     } catch (err) {
         return replyError(reply, err)
     }
