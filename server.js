@@ -133,14 +133,14 @@ io.on("connection", (socket) => {
             const newStrokes = [...existingStrokes, paths]; 
             await setCacheValue(`Room:strokes:${roomId}`, JSON.stringify(newStrokes)); 
         }
-        if (!roomLocks[roomId]) {
-            roomLocks[roomId] = userId
-        } else {
-            roomLocks[roomId] = userId
-            delete roomLocks[roomId]
-            socket.to(roomId).emit("draw", paths);
-        }
-        console.log(roomLocks)
+        // if (!roomLocks[roomId]) {
+        //     roomLocks[roomId] = userId
+        // } else {
+        //     roomLocks[roomId] = userId
+        //     delete roomLocks[roomId]
+        //     socket.to(roomId).emit("draw", paths);
+        // }
+        socket.to(roomId).emit("draw", paths);
         
     });
     
