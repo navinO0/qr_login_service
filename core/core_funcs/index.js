@@ -1,3 +1,5 @@
+const { append } = require("ramda");
+const { logger } = require("../../server");
 
 function generateUniqueCode() {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; 
@@ -30,6 +32,7 @@ const replyError = (reply, errorObject, error, dynamicProperties = {}) => {
         ...parseException(error),
         ...error
     };
+    logger.error(logData);
     return reply.code(400).send(logData);
 }
 
@@ -55,6 +58,7 @@ function replySuccess(reply, result, addOnProperties = {}) {
         response.count = result.length;
         response.type = 'array'
     }
+    // logger.info(response);
     return reply.code(200).send(response);
 }
 

@@ -2,7 +2,8 @@ require("dotenv").config(); // Load environment variables
 
 const CONFIG = {
     HOST: process.env.HOST || '0.0.0.0',
-    PORT : process.env.PORT || 3009,
+    PORT: process.env.PORT || 3009,
+    SOCKET_PORT : process.env.SOCKET_PORT || 3008,
     APP_DB_CONFIG: {
         client: process.env.DB_CLIENT || 'postgres',
         pool: {

@@ -18,7 +18,7 @@ const getUserDetails = async (app, username) => {
         const user = await app.knex.raw(`select username, email, mobile, first_name, middle_name,password, last_name from users where username = '${username}';`)
         return user.rows ? user.rows[0] : {}
     } catch (err) {
-        console.log(err)
+        throw new Error("Failed to fetch the user deatils :" + err);
     }
     
 }
@@ -28,7 +28,7 @@ const getUserImage = async (app, username) => {
         const user = await app.knex.raw(`select profile_photo from users where username = '${username}';`)
         return user.rows ? user.rows[0] : {}
     } catch (err) {
-        console.log(err)
+        throw new Error("Failed to fetch the user Image :" + err);
     }
     
 }

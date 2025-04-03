@@ -22,7 +22,19 @@ const throttle = require("lodash/throttle");
 const { setCacheValue, deleteCacheValue, getCacheValue } = require('./core/redis_config/redis_client');
 const pako = require("pako");
 const fastifyCors = require("@fastify/cors");
+const pino = require('pino');
+const cronScheduler = require('./core/scheduler/scheduler');
+const cronPlugin = require('./core/scheduler/scheduler');
+const setupSocket = require('./whiteboard/socket');
+const {logger} = require('./core/logger/logger')
 
+// const logger = pino({
+//     level: 'info',
+//     transport: {
+//         target: 'pino-pretty',
+//         options: { colorize: true }
+//     }
+// });
 
 function getAllRoutes(filePath, routes = []) {
     const stats = fs.statSync(filePath);
@@ -63,23 +75,37 @@ async function serverSetup(swaggerURL) {
             bodyLimit: 5000000,
         });
 
-        const httpServer = createServer(app.server); // Create an HTTP server
-        const io = new Server(httpServer, { cors: { origin: "*" } }); // Attach Socket.io
-
-        const redis = new Redis(); // Connect to Redis at localhost:6379
-
+        const httpServer = createServer(app.server);
+        const io = new Server(httpServer, { cors: { origin: "*" } });
+        app.decorate('io', io);
+        setupSocket(io, app.log);
         app.decorate('host_name', os.hostname());
         app.decorate('CONFIG', CONFIG);
         app.register(require('@fastify/sensible'));
         app.register(require('@fastify/formbody'));
         app.register(fastifyCors, {
-            origin: true, 
-            credentials: true, 
+            origin: true,
+            credentials: true,
         });
         app.register(helmet, helmetConfig);
         app.register(swagger, swaggerConfig(swaggerURL));
         app.register(swaggerUi, {
             routePrefix: swaggerURL + 'swagger/public/documentation',
+        });
+        app.addHook('onRequest', async (request, reply) => {
+            request.log.info({
+                method: request.method,
+                url: request.url,
+                // headers: request.headers, 
+                body: request.body
+            }, 'Incoming Request');
+        });
+
+        app.addHook('onResponse', async (request, reply) => {
+            request.log.info({
+                statusCode: reply.statusCode,
+                responseTime: reply.getResponseTime()
+            }, 'Response Sent');
         });
 
         // Redis & Database Setup
@@ -90,119 +116,20 @@ async function serverSetup(swaggerURL) {
             return await validateAccessToken({ request }, reply, app);
         });
 
+        await app.register(cronPlugin);
+
         await ajvCompiler(app, {});
 
 
-let whiteboardData = {};
-let cursors = {};
-let roomLocks = {}; // Track which user is drawing
-        
+   
 
-io.on("connection", (socket) => {
-    let customUserId = socket.handshake.query.userId || `guest_${Math.floor(Math.random() * 10000)}`;
+       
 
-    // console.log("User connected:", customUserId);
-
-    // Send the assigned custom ID back to the client
-    io.to(socket.id).emit("custom-id", customUserId);
-
-    socket.on("join-room", (roomId) => {
-        socket.join(roomId);
-        console.log(`User ${customUserId} joined room: ${roomId}`);
-
-        // Initialize room data if not present
-        if (!whiteboardData[roomId]) whiteboardData[roomId] = [];
-        // if (!cursors[roomId]) cursors[roomId] = {};
-
-        // Send existing drawing data to the new user
-        // const compressedData = pako.deflate(JSON.stringify(whiteboardData[roomId]), { to: "string" });
-        // io.to(socket.id).emit("sync", compressedData);
-        io.to(roomId).emit("lock", roomLocks[roomId]);
-    });
-
-    // Handle drawing updates
-    socket.on("draw", async ({ roomId, userId, paths }) => {
-      
-        whiteboardData[roomId] = paths;
-        console.log(`User ${userId} drew on room: ${roomId}`);
-        const strokes = await getCacheValue(`Room:strokes:${roomId}`);
-        if (!strokes) {
-            await setCacheValue(`Room:strokes:${roomId}`, JSON.stringify([paths])); 
-        } else {
-            const existingStrokes = JSON.parse(strokes); 
-            const newStrokes = [...existingStrokes, paths]; 
-            await setCacheValue(`Room:strokes:${roomId}`, JSON.stringify(newStrokes)); 
-        }
-        // if (!roomLocks[roomId]) {
-        //     roomLocks[roomId] = userId
-        // } else {
-        //     roomLocks[roomId] = userId
-        //     delete roomLocks[roomId]
-        //     socket.to(roomId).emit("draw", paths);
-        // }
-        socket.to(roomId).emit("draw", paths);
-        
-    });
-    
-
-    // Handle clearing the whiteboard
-    socket.on("clear", (roomId) => {
-        whiteboardData[roomId] = [];
-        socket.to(roomId).emit("clear");
-    });
-
-    // Handle undo/redo
-    socket.on("undo", (roomId) => socket.to(roomId).emit("undo"));
-    socket.on("redo", (roomId) => socket.to(roomId).emit("redo"));
-
-    // Handle cursor movement
-    socket.on("cursor-move", ({ roomId, userId, cursor }) => {
-        if (!cursors[roomId]) cursors[roomId] = {};
-        cursors[roomId][userId] = cursor;
-
-        socket.to(roomId).emit("cursor-move", { userId, cursor });
-    });
-
-      // Handle drawing lock
-  socket.on("lock", ({ roomId, userId }) => {
-    if (!roomLocks[roomId]) {
-        roomLocks[roomId] = userId;
-        console.log(`User ${userId} locked the whiteboard in room: ${roomId}`);
-      io.to(roomId).emit("lock", userId);
-      
-    }
-  });
-
-  // Handle unlocking
-  socket.on("unlock", (roomId) => {
-    if (roomLocks[roomId]) {
-      console.log(`User ${roomLocks[roomId]} unlocked the whiteboard in room: ${roomId}`);
-      roomLocks[roomId] = null;
-      io.to(roomId).emit("unlock");
-      }
-  });
-    
-    socket.on("message", async ({ id,roomId, userId, message, time }) => {
-        console.log(`User ${userId} sent a message "${message}" in room: ${roomId} ${roomId, userId, message, time}`);
-        const newMessage = { id, userId, message, time };
-        let messages = await getCacheValue(`chat:room:${roomId}`);
-        messages = messages ? JSON.parse(messages) : [];
-        messages.push(newMessage);
-         setCacheValue(`chat:room:${roomId}`, JSON.stringify(messages));
-        io.to(roomId).emit("message", { id, userId, message, time })
-    });
-
-    // Handle user disconnect
-    socket.on("disconnect", () => {
-        console.log(`User disconnected: ${customUserId}`);
-    });
-});
-
-httpServer.listen(3008, () => console.log("🚀 Server running on http://localhost:4000"));
+        httpServer.listen(CONFIG.SOCKET_PORT, () => app.log.info(`Socket Server running on ${CONFIG.HOST}:${CONFIG.SOCKET_PORT}`));
 
         return app;
     } catch (err) {
-        console.log(err);
+        logger.error(err, "Server setup error");
     }
 };
 
@@ -251,10 +178,10 @@ const swaggerConfig = (url) => {
 };
 
 process.on('uncaughtException', (err) => {
-    console.log(err ? err : "UNCAUGHT_EXCEPTION");
+    logger.error(err, "UNCAUGHT_EXCEPTION");
     setTimeout(() => {
-        process.exit(1)
+        process.exit(1);
     })
 });
 
-module.exports = { getAllRoutes, serverSetup };
+module.exports = { getAllRoutes, serverSetup, logger };

@@ -2,6 +2,7 @@
 
 const { generateUniqueCode, replyError, replySuccess } = require('../../core/core_funcs');
 const { setCacheValue, getCacheValue } = require('../../core/redis_config/redis_client');
+const { getUserSuggestions, create_room } = require('../services/wb_service');
 
 
 
@@ -16,15 +17,28 @@ async function GET_ROOM_ID(request, reply) {
     }
 }
 
-async function SAVE_ROOM_ID(request, reply) {
+async function GET_USER_SUGGESTION(request, reply) {
     try {
-        const { roomId, paths } = request.body;
-        await setCacheValue(`whiteboard:${roomId}`, JSON.stringify(paths));
-        return replySuccess(reply, { message: 'success' })
+        const userKeyword = request.params.userKeyword
+        const getSuggestions = await getUserSuggestions(this, userKeyword)
+        return replySuccess(reply, { users : getSuggestions })
+    } catch (err) {
+        return replyError(reply, err)
+    }
+}
+
+async function CREATE_ROOM(request, reply) {
+    try {
+        const roomData = request.body
+        const ownerDetails = request.user_info
+        const insertRoomData = { ...roomData, owner_username: ownerDetails.username }
+        
+        const getSuggestions = await create_room(this, insertRoomData)
+        return replySuccess(reply, { users : getSuggestions })
     } catch (err) {
         return replyError(reply, err)
     }
 }
 
 
-module.exports = {GET_ROOM_ID,SAVE_ROOM_ID }
+module.exports = {GET_ROOM_ID,GET_USER_SUGGESTION, CREATE_ROOM }

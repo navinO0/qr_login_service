@@ -1,5 +1,5 @@
-const { GET_ROOM_ID, SAVE_ROOM_ID } = require('./controllers/wb_controller');
-const { room_id_schema, save_room_schema } = require('./schemas/wb_schema');
+const { GET_ROOM_ID, SAVE_ROOM_ID, GET_USER_SUGGESTION, CREATE_ROOM } = require('./controllers/wb_controller');
+const { room_id_schema, save_room_schema, getUsersSchema, create_room_schema } = require('./schemas/wb_schema');
 // const fastifyWebsocket = require('fastify-websocket');
 
 module.exports = async (app) => {
@@ -12,10 +12,17 @@ app.route({
     });
 
     app.route({
-        method: 'POST',
-        url: '/save',
-        schema: save_room_schema,
-        handler: SAVE_ROOM_ID,
+        method: 'GET',
+        url: '/get/users/:userKeyword',
+        schema: getUsersSchema,
+        handler: GET_USER_SUGGESTION,
     });
 
+
+    app.route({
+        method: 'POST',
+        url: '/room/create',
+        schema: create_room_schema,
+        handler: CREATE_ROOM,
+    });
 };
