@@ -10,8 +10,8 @@ async function GET_ROOM_ID(request, reply) {
     try {
         const room_id = request.params.roomId
         const messages = await getCacheValue(`chat:room:${room_id}`);
-        // const strokes = await getCacheValue(`Room:strokes:${room_id}`)
-        return replySuccess(reply, { messages: (messages ? JSON.parse(messages) : [])})
+        const strokes = await getCacheValue(`Room:strokes:${room_id}`)
+        return replySuccess(reply, { messages: (messages ? JSON.parse(messages) : []),  drowData: (strokes ? JSON.parse(strokes) : [])})
     } catch (err) {
         return replyError(reply, err)
     }
@@ -19,7 +19,7 @@ async function GET_ROOM_ID(request, reply) {
 
 async function GET_USER_SUGGESTION(request, reply) {
     try {
-        const userKeyword = request.params.userKeyword
+        const userKeyword = request.params.userKeyword    
         const getSuggestions = await getUserSuggestions(this, userKeyword)
         return replySuccess(reply, { users : getSuggestions })
     } catch (err) {

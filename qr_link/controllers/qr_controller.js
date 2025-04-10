@@ -17,7 +17,6 @@ async function CREATE_USER(request, reply) {
         if (user && user !== "") {
             throw new Error("username not available");
         }
-        // Validation regex patterns
         const usernamePattern = /^[a-zA-Z0-9_]{3,20}$/;
         const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         const mobilePattern = /^\d{10}$/;
@@ -44,10 +43,8 @@ async function CREATE_USER(request, reply) {
             throw new Error("last name must be between 2-30 alphabetic characters (if provided).");
         }
 
-        // Hash the password
         const hashedPassword = await hashPassword(password);
 
-        // Create user object
         const userDetails = {
             username,
             email,
@@ -59,7 +56,6 @@ async function CREATE_USER(request, reply) {
             profile_photo
         };
 
-        // Create user in the system
         const userCreateResponse = await createUser(this, userDetails);
         const token = await genereateToke(this, userCreateResponse)
         return replySuccess(reply, { token });
@@ -154,11 +150,10 @@ async function SAVE_ROOM_ID(request, reply) {
 async function REGISTER_GOOGLE_AUTH(request, reply) {
     try {
         const body = request.body;
-        // Decrypt the incoming request body
         const { username, email,first_name, profile_photo } = decryptObject(this, body,['username','email','first_name']);
         const user = await getUserDetails(this, username)
         if (user && user !== "") {
-            replySuccess(reply, { message: "User already registered" })
+           return replySuccess(reply, { message: "User already registered" })
         }
 
         const userDetails = {
@@ -169,7 +164,6 @@ async function REGISTER_GOOGLE_AUTH(request, reply) {
             password : ''
         };
 
-        // Create user in the system
         await createUser(this, userDetails);
         return replySuccess(reply, { message: 'success' })
     } catch (err) {

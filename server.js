@@ -26,7 +26,17 @@ const pino = require('pino');
 const cronScheduler = require('./core/scheduler/scheduler');
 const cronPlugin = require('./core/scheduler/scheduler');
 const setupSocket = require('./whiteboard/socket');
-const {logger} = require('./core/logger/logger')
+const { logger } = require('./core/logger/logger')
+const mediasoup = require("mediasoup");
+const io = require("socket.io")(fastify.server, {
+    cors: {
+        origin: "*", // Adjust as per your needs
+        methods: ["GET", "POST"]
+    },
+    transports: ["websocket", "polling"], // Ensure WebSockets are enabled
+});
+
+let worker, router;
 
 // const logger = pino({
 //     level: 'info',
@@ -120,10 +130,6 @@ async function serverSetup(swaggerURL) {
 
         await ajvCompiler(app, {});
 
-
-   
-
-       
 
         httpServer.listen(CONFIG.SOCKET_PORT, () => app.log.info(`Socket Server running on ${CONFIG.HOST}:${CONFIG.SOCKET_PORT}`));
 
