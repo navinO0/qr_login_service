@@ -27,7 +27,6 @@ const cronScheduler = require('./core/scheduler/scheduler');
 const cronPlugin = require('./core/scheduler/scheduler');
 const setupSocket = require('./whiteboard/socket');
 const { logger } = require('./core/logger/logger')
-const mediasoup = require("mediasoup");
 const io = require("socket.io")(fastify.server, {
     cors: {
         origin: "*", // Adjust as per your needs
