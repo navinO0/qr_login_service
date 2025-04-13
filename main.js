@@ -39,7 +39,7 @@ const urlPrefix = "/users";
             });
 
     } catch (err) {
-        console.error('Error occurred:', err); // Use console.error for errors
+        console.error('Error occurred:', err); 
         process.exit(1);
     }
 })();

@@ -29,8 +29,9 @@ const replyError = (reply, errorObject, error, dynamicProperties = {}) => {
     }
     const logData = {
         ...errorObject,
-        ...parseException(error),
-        ...error
+        // errorObject,
+        // ...parseException(errorObject),
+        // ...error,
     };
     logger.error(logData);
     return reply.code(400).send(logData);

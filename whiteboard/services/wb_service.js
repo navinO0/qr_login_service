@@ -20,11 +20,70 @@ const create_room = async (app, roomData) => {
     try {
         const insertedRoom = await app.knex('rooms')
         .insert(roomData)
-        .returning('*'); // Returns the inserted row(s)
-   
+        .returning('*'); 
         return  insertedRoom
     } catch (err) {
         throw new Error("Failed to create the room :" + err);
 }
 }
-module.exports = {getUserSuggestions, create_room}
+
+const updateRoomUsers = async (app, roomId, customUserId) => {
+    try {
+        const room = await app.knex('rooms').where('id', roomId).first();
+        if (!room) {
+            app.kenx.insert({ room_id: roomId, owner_username: customUserId }).into('rooms');
+        } else {
+            const participantList = [customUserId];
+            await app.knex('rooms')
+              .where('room_id', roomId)
+              .update({ participants: app.knex.raw('ARRAY[?]::text[]', [participantList]) });  
+        }
+        
+    } catch (err) {
+        throw new Error("Failed to update the room users :" + err);
+    }
+}
+
+const getRoomChatData = async(app, roomId) => {
+    try {
+        const getQeury = `select json_agg(m.*) as messages from messages m where room_id = '${roomId}';`
+        const roomData = await app.knex.raw(getQeury)
+        return roomData?.rows[0]?.messages.length >0 ? roomData.rows[0].messages : []
+    } catch (err) {
+        throw new Error("Failed to get the room chat data :" + err);
+    }
+   }
+
+
+   const join_room = async (app, roomId, username, password) => {
+    try {
+        const room = await app.knex('rooms').where('room_id', roomId).first();
+        if (room && room?.participants.includes(username)) {
+            return ({status: true})
+        }
+        if(room && room?.is_private && password &&  room?.password !== password) {
+            throw new Error("Invalid password");
+        }
+        if(room && room?.is_private && !password) {
+            return ({status: false, code : "PASSWORD_REQUIRED"})
+        }
+
+        if (!room) {
+            app.kenx.insert({ room_id: roomId, owner_username: username }).into('rooms');
+        } else {
+            // const participantList = [username];
+            await app.knex('rooms')
+            .where('room_id', roomId)
+            .update({
+              participants: app.knex.raw('array_cat(participants, ?::text[])', [[username]])
+            });
+            
+        }
+        
+    } catch (err) {
+        throw new Error("Failed to update the room users :" + err);
+    }
+}
+
+
+module.exports = {getUserSuggestions, create_room, updateRoomUsers, getRoomChatData, join_room}

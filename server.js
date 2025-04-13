@@ -6,44 +6,21 @@ require('make-promises-safe');
 const fastify = require('fastify');
 const { createServer } = require('http'); // Import HTTP server
 const { Server } = require('socket.io'); // Import Socket.io
-const Redis = require('ioredis'); // Import Redis
-const cors = require('@fastify/cors');
 const helmet = require('@fastify/helmet');
 const swagger = require('@fastify/swagger');
 const swaggerUi = require('@fastify/swagger-ui');
 const os = require('os');
 const { ajvCompiler } = require('./qr_link/schemas/qr_schema');
 const { v4: uuid } = require('uuid');
-const { knexClientCreate } = require('./core/qpf_knex_query_builder');
+const { knexClientCreate } = require('./core/knex_query_builder');
 const { validateAccessToken } = require('./core/token_generate_validate');
 const CONFIG = require('./core/config');
 const { redisClientCreate } = require('./core/redis_config');
-const throttle = require("lodash/throttle");
-const { setCacheValue, deleteCacheValue, getCacheValue } = require('./core/redis_config/redis_client');
-const pako = require("pako");
 const fastifyCors = require("@fastify/cors");
-const pino = require('pino');
-const cronScheduler = require('./core/scheduler/scheduler');
 const cronPlugin = require('./core/scheduler/scheduler');
 const setupSocket = require('./whiteboard/socket');
 const { logger } = require('./core/logger/logger')
-const io = require("socket.io")(fastify.server, {
-    cors: {
-        origin: "*", // Adjust as per your needs
-        methods: ["GET", "POST"]
-    },
-    transports: ["websocket", "polling"], // Ensure WebSockets are enabled
-});
 
-let worker, router;
-
-// const logger = pino({
-//     level: 'info',
-//     transport: {
-//         target: 'pino-pretty',
-//         options: { colorize: true }
-//     }
-// });
 
 function getAllRoutes(filePath, routes = []) {
     const stats = fs.statSync(filePath);
@@ -83,11 +60,6 @@ async function serverSetup(swaggerURL) {
             disableRequestLogging: true,
             bodyLimit: 5000000,
         });
-
-        const httpServer = createServer(app.server);
-        const io = new Server(httpServer, { cors: { origin: "*" } });
-        app.decorate('io', io);
-        setupSocket(io, app.log);
         app.decorate('host_name', os.hostname());
         app.decorate('CONFIG', CONFIG);
         app.register(require('@fastify/sensible'));
@@ -105,7 +77,7 @@ async function serverSetup(swaggerURL) {
             request.log.info({
                 method: request.method,
                 url: request.url,
-                // headers: request.headers, 
+                headers: request.headers, 
                 body: request.body
             }, 'Incoming Request');
         });
@@ -121,16 +93,20 @@ async function serverSetup(swaggerURL) {
         await redisClientCreate(app, CONFIG.REDIS, 'redis');
         await knexClientCreate(app, CONFIG.APP_DB_CONFIG, 'knex');
 
+        const httpServer = createServer(app.server);
+        const io = new Server(httpServer, { cors: { origin: "*" } });
+        app.decorate('io', io);
+        setupSocket(io, app.log);
+
         app.addHook('onRequest', async (request, reply) => {
             return await validateAccessToken({ request }, reply, app);
         });
 
         await app.register(cronPlugin);
-
+        app.register(require('./whiteboard/scheduler'));
+        
         await ajvCompiler(app, {});
-
-
-        httpServer.listen(CONFIG.SOCKET_PORT, () => app.log.info(`Socket Server running on ${CONFIG.HOST}:${CONFIG.SOCKET_PORT}`));
+        app.httpServer = httpServer.listen(CONFIG.SOCKET_PORT, () => app.log.info(`Socket Server running on ${CONFIG.HOST}:${CONFIG.SOCKET_PORT}`));
 
         return app;
     } catch (err) {

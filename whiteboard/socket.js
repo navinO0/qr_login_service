@@ -1,6 +1,7 @@
 // const mediasoup = require("mediasoup");
-const pako = require("pako");
 const { getCacheValue, setCacheValue } = require("../core/redis_config/redis_client");
+const CONFIG = require('../core/config');
+const { updateRoomUsers } = require("./services/wb_service");
 
 let whiteboardData = {};
 let cursors = {};
@@ -32,6 +33,7 @@ module.exports = async function setupSocket(io, log) {
         socket.on("join-room", (roomId) => {
             socket.join(roomId);
             log.info(`User ${customUserId} joined room: ${roomId}`);
+            // updateRoomUsers(this, roomId, customUserId);
 
             if (!whiteboardData[roomId]) whiteboardData[roomId] = [];
             io.to(roomId).emit("lock", roomLocks[roomId]);
@@ -41,16 +43,16 @@ module.exports = async function setupSocket(io, log) {
             whiteboardData[roomId] = paths;
             // log.info(`User ${userId} drew on room: ${roomId}`);
 
-            const strokes = await getCacheValue(`Room:strokes:${roomId}`);
+            const strokes = await getCacheValue(`${CONFIG.REDIS.MESSAGES_KEY}${roomId}`);
             const newStrokes = strokes ? [...JSON.parse(strokes), ...paths] : [...paths];
-            await setCacheValue(`Room:strokes:${roomId}`, JSON.stringify(newStrokes));
+            await setCacheValue(`${CONFIG.REDIS.STROKES_KEY}${roomId}`, JSON.stringify(newStrokes));
 
             socket.to(roomId).emit("draw", paths);
         });
 
         socket.on("clear", async(roomId) => {
             whiteboardData[roomId] = [];
-            await setCacheValue(`Room:strokes:${roomId}`, JSON.stringify([]));
+            await setCacheValue(`${CONFIG.REDIS.MESSAGES_KEY}${roomId}`, JSON.stringify([]));
             socket.to(roomId).emit("clear");
         });
 
@@ -79,16 +81,16 @@ module.exports = async function setupSocket(io, log) {
             }
         });
 
-        socket.on("message", async ({ id, roomId, userId, message, time }) => {
-            log.info(`User ${userId} sent a message "${message}" in room: ${roomId}`);
-            const newMessage = { id, userId, message, time };
+        socket.on("message", async ({ id, room_id, sender_username, content, sent_at }) => {
+            log.info(`User ${sender_username} sent a message "${content}" in room: ${room_id}`);
+            const newMessage = { id, sender_username, content, sent_at, room_id };
 
-            let messages = await getCacheValue(`chat:room:${roomId}`);
+            let messages = await getCacheValue(`${CONFIG.REDIS.MESSAGES_KEY}${room_id}`);
             messages = messages ? JSON.parse(messages) : [];
             messages.push(newMessage);
-            setCacheValue(`chat:room:${roomId}`, JSON.stringify(messages));
+            setCacheValue(`${CONFIG.REDIS.MESSAGES_KEY}${room_id}`, JSON.stringify(messages));
 
-            io.to(roomId).emit("message", newMessage);
+            io.to(room_id).emit("message", newMessage);
         });
 
         

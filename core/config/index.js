@@ -27,7 +27,9 @@ const CONFIG = {
         host: process.env.REDIS_HOST || "localhost", // Change to your Redis server host
         port: process.env.REDIS_PORT || 6379, // Default Redis port
         QR_CODE_EXPIRY_IN_SECS: process.env.QR_CODE_EXPIRY_IN_SECS || 180,
-        TOKEN_EXPIRY_IN_SECS: process.env.TOKEN_EXPIRY_IN_SECS || 3600
+        TOKEN_EXPIRY_IN_SECS: process.env.TOKEN_EXPIRY_IN_SECS || 3600,
+        STROKES_KEY: process.env.STROKES_KEY || "ROOM-STROKES_",
+        MESSAGES_KEY: process.env.MESSAGES_KEY || "ROOM-MESSAGES_",
     },
 
     POSTGRES_CONFIG: {

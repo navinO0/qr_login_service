@@ -28,7 +28,6 @@ io.on("connection", (socket) => {
     socket.on("disconnect", () => console.log("User disconnected"));
 }); 
 
-console.log("uhewihdiuew")
 
 
 module.exports = async (app) => {

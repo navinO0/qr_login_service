@@ -59,4 +59,14 @@ async function flushCache() {
   }
 }
 
-module.exports = { redisClient, getCacheValue, setCacheValue, deleteCacheValue, flushCache, redisInitialise };
+async function getKeysByPattern(pattern) {
+  try {
+    const keys = await redisClient.keys(pattern);
+    return keys;
+  } catch (error) {
+    cosole.log("Redis Get Keys Error:", error);
+    return [];
+  }
+}
+
+module.exports = { redisClient, getCacheValue, setCacheValue, deleteCacheValue, flushCache, redisInitialise, getKeysByPattern };
