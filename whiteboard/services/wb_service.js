@@ -69,7 +69,7 @@ const getRoomChatData = async(app, roomId) => {
         }
 
         if (!room) {
-            app.kenx.insert({ room_id: roomId, owner_username: username }).into('rooms');
+            app.knex.insert({ room_id: roomId, owner_username: username , is_private: false }).into('rooms');
         } else {
             // const participantList = [username];
             await app.knex('rooms')
