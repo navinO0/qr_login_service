@@ -5,9 +5,8 @@ const { getKeysByPattern, getCacheValue, deleteCacheValue, flushCache } = requir
 async function jobPlugin(fastify, options) {
     fastify.cronScheduler.scheduleJob(
         'Backup Messages Cron Job',
-        '*/60 * * * * *',
+        CONFIG.SCHEDULER.BACKUP_CRON_SCHEDULE,
         async () => {
-            console.log(await getKeysByPattern(`${CONFIG.REDIS.MESSAGES_KEY}*`));
             const chatRooms = await getKeysByPattern(`${CONFIG.REDIS.MESSAGES_KEY}*`);
             const insertPromises = chatRooms.map(async (roomId) => {
                 try {
@@ -34,7 +33,6 @@ async function jobPlugin(fastify, options) {
             });
             
             await Promise.all(insertPromises);
-            fastify.log.info('Backup Messages Cron Job Completed');
         }
     );
 }

@@ -2,7 +2,7 @@
 
 const { replyError, replySuccess } = require('../../core/core_funcs');
 const {  getCacheValue } = require('../../core/redis_config/redis_client');
-const { getUserSuggestions, create_room, getRoomChatData, join_room } = require('../services/wb_service');
+const { getUserSuggestions, create_room, getRoomChatData, join_room, getRoom } = require('../services/wb_service');
 
 
 
@@ -47,7 +47,10 @@ async function CREATE_ROOM(request, reply) {
         const roomData = request.body
         const ownerDetails = request.user_info
         const insertRoomData = { ...roomData, owner_username: ownerDetails.username }
-        
+        const checkIfRoomExists = await getRoom(this, roomData.room_id)
+        if(checkIfRoomExists && checkIfRoomExists.room_id.length) {
+            return replyError(reply, { message: 'Room already exists' })
+        }
         const getSuggestions = await create_room(this, insertRoomData)
         return replySuccess(reply, { users : getSuggestions })
     } catch (err) {

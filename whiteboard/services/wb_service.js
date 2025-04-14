@@ -62,7 +62,7 @@ const getRoomChatData = async(app, roomId) => {
             return ({status: true})
         }
         if(room && room?.is_private && password &&  room?.password !== password) {
-            throw new Error("Invalid password");
+            return ({status: false, code : "INVALID_PASSWORD"});
         }
         if(room && room?.is_private && !password) {
             return ({status: false, code : "PASSWORD_REQUIRED"})
@@ -85,5 +85,14 @@ const getRoomChatData = async(app, roomId) => {
     }
 }
 
+const getRoom = async (app, roomId) => {
+    try {
+        const room = await app.knex('rooms').where('room_id', roomId).first();
+        return room
+    } catch (err) {
+        throw new Error("Failed to update the room users :" + err);
+    }
+}
 
-module.exports = {getUserSuggestions, create_room, updateRoomUsers, getRoomChatData, join_room}
+
+module.exports = {getUserSuggestions, create_room, updateRoomUsers, getRoomChatData, join_room, getRoom}

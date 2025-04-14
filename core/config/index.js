@@ -44,6 +44,10 @@ const CONFIG = {
         KEY_HEX: process.env.KEY_HEX || "51d50fd2414f785fdd9cd1d7d6b98cbca8ce426b4f39a79affd9d900ca8d7eeb",
         IV_HEX: process.env.IV_HEX || "cc6f3e4f66ad34ade65e3e67fb96856c",
         JWT_SECRET: process.env.JWT_SECRET || "XXXXX",
+    },
+
+    SCHEDULER: {
+        BACKUP_CRON_SCHEDULE: process.env.BACKUP_CRON_SCHEDULE || '0 * * * *',
     }
 };
 
