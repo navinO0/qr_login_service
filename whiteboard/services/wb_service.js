@@ -48,7 +48,7 @@ const getRoomChatData = async(app, roomId) => {
     try {
         const getQeury = `select json_agg(m.*) as messages from messages m where room_id = '${roomId}';`
         const roomData = await app.knex.raw(getQeury)
-        return roomData?.rows[0]?.messages.length >0 ? roomData.rows[0].messages : []
+        return roomData?.rows[0]?.messages?.length >0 ? roomData.rows[0].messages : []
     } catch (err) {
         throw new Error("Failed to get the room chat data :" + err);
     }

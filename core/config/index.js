@@ -47,7 +47,11 @@ const CONFIG = {
     },
 
     SCHEDULER: {
-        BACKUP_CRON_SCHEDULE: process.env.BACKUP_CRON_SCHEDULE || '0 * * * *',
+        BACKUP_CRON_SCHEDULE: process.env.BACKUP_CRON_SCHEDULE || '*/30 * * * *',
+    },
+
+    MONGO_DB : {
+        MONGODB_URL : process.env.MONGODB_URL || " mongodb://root:example@mongo:27017/"
     }
 };
 

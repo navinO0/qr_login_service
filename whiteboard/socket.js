@@ -43,7 +43,7 @@ module.exports = async function setupSocket(io, log) {
             whiteboardData[roomId] = paths;
             // log.info(`User ${userId} drew on room: ${roomId}`);
 
-            const strokes = await getCacheValue(`${CONFIG.REDIS.MESSAGES_KEY}${roomId}`);
+            const strokes = await getCacheValue(`${CONFIG.REDIS.STROKES_KEY}${roomId}`);
             const newStrokes = strokes ? [...JSON.parse(strokes), ...paths] : [...paths];
             await setCacheValue(`${CONFIG.REDIS.STROKES_KEY}${roomId}`, JSON.stringify(newStrokes));
 

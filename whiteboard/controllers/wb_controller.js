@@ -12,7 +12,6 @@ async function GET_ROOM_ID(request, reply) {
         const messages = await getCacheValue(`${this.CONFIG.REDIS.MESSAGES_KEY}${room_id}`);
         const strokes = await getCacheValue(`${this.CONFIG.REDIS.STROKES_KEY}${room_id}`)
         const msgsFromDb = await getRoomChatData(this, room_id)
-        console.log(msgsFromDb)
         return replySuccess(reply, {
             messages: (() => {
               if (messages?.length) {

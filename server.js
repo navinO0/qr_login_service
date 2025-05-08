@@ -19,7 +19,8 @@ const { redisClientCreate } = require('./core/redis_config');
 const fastifyCors = require("@fastify/cors");
 const cronPlugin = require('./core/scheduler/scheduler');
 const setupSocket = require('./whiteboard/socket');
-const { logger } = require('./core/logger/logger')
+const { logger } = require('./core/logger/logger');
+const connectMongoDB = require('./core/mongo');
 
 
 function getAllRoutes(filePath, routes = []) {
@@ -92,7 +93,7 @@ async function serverSetup(swaggerURL) {
         // Redis & Database Setup
         await redisClientCreate(app, CONFIG.REDIS, 'redis');
         await knexClientCreate(app, CONFIG.APP_DB_CONFIG, 'knex');
-
+        await connectMongoDB()
         const httpServer = createServer(app.server);
         const io = new Server(httpServer, { cors: { origin: "*" } });
         app.decorate('io', io);

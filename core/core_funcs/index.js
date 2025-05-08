@@ -29,11 +29,10 @@ const replyError = (reply, errorObject, error, dynamicProperties = {}) => {
     }
     const logData = {
         ...errorObject,
-        // errorObject,
-        // ...parseException(errorObject),
-        // ...error,
+        ...parseException(errorObject),
+        ...error,
     };
-    logger.error(logData);
+    logger.info(logData);
     return reply.code(400).send(logData);
 }
 
