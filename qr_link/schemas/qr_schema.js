@@ -157,7 +157,7 @@ const room_id_schema = {
     summary: "User Registration and Login",
     description: `<h3>This API allows users to register, login, and manage their accounts.</h3>`,
     // rbac: ["*"],  // Roles or permissions (adjust as needed, e.g., ['admin', 'user'])
-    // security: [{ ApiToken: [] }],
+    security: [{ ApiToken: [] }],
     params: {
         type: "object",
         properties: {
