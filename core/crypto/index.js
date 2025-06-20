@@ -41,10 +41,23 @@ function decryptData(app, encryptedString) {
 function decryptObject(app, obj, dec_keys) {
     try {
         for (let key in obj) {
-            if (dec_keys.includes(key)) {
-                if (typeof obj[key] === "string") {
-                    obj[key] = decryptData(app, obj[key]);
-                }
+            if (!obj.hasOwnProperty(key)) continue;
+
+            if (dec_keys.includes(key) && typeof obj[key] === "string") {
+                obj[key] = decryptData(app, obj[key]);
+            }
+
+            else if (obj[key] && typeof obj[key] === "object" && !Array.isArray(obj[key])) {
+                obj[key] = decryptObject(app, obj[key], dec_keys);
+            }
+
+            else if (Array.isArray(obj[key])) {
+                obj[key] = obj[key].map(item => {
+                    if (item && typeof item === "object") {
+                        return decryptObject(app, item, dec_keys);
+                    }
+                    return item;
+                });
             }
         }
         return obj;
@@ -52,5 +65,6 @@ function decryptObject(app, obj, dec_keys) {
         throw error;
     }
 }
+
 
 module.exports = { decryptObject };
