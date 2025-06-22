@@ -30,6 +30,7 @@ const CONFIG = {
         TOKEN_EXPIRY_IN_SECS: process.env.TOKEN_EXPIRY_IN_SECS || 3600,
         STROKES_KEY: process.env.STROKES_KEY || "ROOM-STROKES_",
         MESSAGES_KEY: process.env.MESSAGES_KEY || "ROOM-MESSAGES_",
+        DEVICES_KEY: process.env.DEVICES_KEY || "_TOKEN_DEVICES"
     },
 
     POSTGRES_CONFIG: {

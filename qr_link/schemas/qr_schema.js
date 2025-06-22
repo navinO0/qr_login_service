@@ -75,6 +75,9 @@ const user_create_schema = {
             },
             profile_photo: {
                 type: "string",
+            },
+            device_info: {
+                type: "object",
             }
         },
         required: ["username", "password", "email"],  // Make username, password, and email required
@@ -102,6 +105,9 @@ const user_login_schema = {
             password: {
                 type: "string",
                 minLength: 8
+            },
+            device_info: {
+                type: "object",
             }
         },
         required: ["username", "password"],  // Make username, password, and email required
@@ -122,27 +128,33 @@ const lgin_code_schema = {
                 type: "string",
             },
         },
-        required: ["token"],  // Make username, password, and email required
+        required: ["token"],
         additionalProperties: false
     }
 };
 
 const login_with_code = {
     tags: ['user'],
-    summary: "User Registration and Login",
-    description: `<h3>This API allows users to register, login, and manage their accounts.</h3>`,
-    rbac: ["*"],  // Roles or permissions (adjust as needed, e.g., ['admin', 'user'])
+    summary: "User Login via QR Code",
+    description: "<h3>This API allows users to log in using a QR code and optionally send device information for session management.</h3>",
+    rbac: ["*"],  // Adjust based on your role-based access control
     params: {
         type: "object",
         properties: {
             code: {
                 type: "string",
+                description: "The one-time QR login code",
             },
         },
         required: ["code"],
-        additionalProperties: false
+        additionalProperties: false,
+    },
+    body: {
+        type: "object",
+        required: []
     }
-}
+};
+
 
 const image_schema = {
     tags: ['user'],
@@ -198,7 +210,7 @@ async function ajvCompiler(app, options) {
         coerceTypes: true,
         allErrors: true,
         allowUnionTypes: true,
-        strict: false 
+        strict: false
     });
     AjvErrors(ajv);
     addFormats(ajv);
@@ -211,7 +223,7 @@ const register_google_user_schema = {
     tags: ['user'],
     summary: "User Registration and Login",
     description: `<h3>This API allows users to register, login, and manage their accounts.</h3>`,
-    rbac: ["*"],  
+    rbac: ["*"],
     body: {
         type: "object",
         properties: {
@@ -238,10 +250,50 @@ const register_google_user_schema = {
                 type: "string",
             }
         },
-        required: ["username"],  
+        required: ["username"],
         additionalProperties: false
     }
 };
 
 
-module.exports = { qr_schema, ajvCompiler, user_create_schema, user_login_schema, lgin_code_schema, login_with_code,image_schema,room_id_schema,save_room_schema, register_google_user_schema}
+const get_devices_schema = {
+    tags: ['user'],
+    summary: "User Registration and Login",
+    description: `<h3>This API allows users to register, login, and manage their accounts.</h3>`,
+    rbac: ["*"],
+    security: [{ ApiToken: [] }],
+    // body: {
+    //     type: "object",
+    //     properties: {
+    //         token: {
+    //             type: "string",
+    //         },
+    //     },
+    // required: ["token"],  
+    // additionalProperties: false
+    // }
+};
+
+
+const remove_all_devices_schema = {
+    tags: ['user'],
+    summary: "User Registration and Login",
+    description: `<h3>This API allows users to register, login, and manage their accounts.</h3>`,
+    rbac: ["*"],
+    security: [{ ApiToken: [] }],
+    body: {
+        type: "object",
+        properties: {
+            is_remove_all_devices: {
+                type: "boolean",
+            },
+            device_fingerprint: {
+                type: "string",
+            }
+        },
+        required: ["is_remove_all_devices"],
+        additionalProperties: false
+    }
+};
+
+module.exports = { qr_schema, ajvCompiler, user_create_schema, user_login_schema, lgin_code_schema, login_with_code, image_schema, room_id_schema, save_room_schema, register_google_user_schema, get_devices_schema, remove_all_devices_schema }

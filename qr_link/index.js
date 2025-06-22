@@ -1,5 +1,5 @@
-const { CREATE_USER, LOGIN, GET_CODE, LOGIN_WITH_CODE, GET_IMAGE, GET_ROOM_ID, SAVE_ROOM_ID, REGISTER_GOOGLE_AUTH } = require('./controllers/qr_controller');
-const { user_create_schema, user_login_schema, lgin_code_schema, login_with_code, image_schema, room_id_schema, save_room_schema, register_google_user_schema } = require('./schemas/qr_schema');
+const { CREATE_USER, LOGIN, GET_CODE, LOGIN_WITH_CODE, GET_IMAGE, GET_ROOM_ID, SAVE_ROOM_ID, REGISTER_GOOGLE_AUTH, GET_DEVICES, REMOVE_DEVICE } = require('./controllers/qr_controller');
+const { user_create_schema, user_login_schema, lgin_code_schema, login_with_code, image_schema, room_id_schema, save_room_schema, register_google_user_schema, get_devices_schema, remove_all_devices_schema } = require('./schemas/qr_schema');
 // const fastifyWebsocket = require('fastify-websocket');
 
 module.exports = async (app) => {
@@ -51,5 +51,19 @@ module.exports = async (app) => {
     //     schema: save_room_schema,
     //     handler: SAVE_ROOM_ID,
     // }); 
+
+    app.route({
+        method: 'GET',
+        url: '/get/devices',
+        schema: get_devices_schema,
+        handler: GET_DEVICES,
+    });
+
+       app.route({
+        method: 'POST',
+        url: '/delete/devices',
+        schema: remove_all_devices_schema,
+        handler: REMOVE_DEVICE,
+    });
 
 };

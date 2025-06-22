@@ -4,7 +4,7 @@ const { generateUniqueCode, replyError, replySuccess } = require('../../core/cor
 const { decryptObject } = require('../../core/crypto');
 const { hashPassword, verifyPassword } = require('../../core/password_enc_desc');
 const { setCacheValue, deleteCacheValue, getCacheValue } = require('../../core/redis_config/redis_client');
-const { genereateToke } = require('../../core/token_generate_validate');
+const { genereateToke, decodeToken } = require('../../core/token_generate_validate');
 const { createUser, getUserDetails, getUserImage } = require('../services/qr_service')
 const jwt = require('jsonwebtoken');
 
@@ -12,6 +12,7 @@ async function CREATE_USER(request, reply) {
     try {
         const body = request.body;
         // Decrypt the incoming request body
+        const device_info = request.body.device_info
         const { username, password, email, mobile, first_name, last_name, middle_name, profile_photo } = decryptObject(this, body,['username','email','mobile','first_name','middle_name', "password", 'last_name']);
         const user = await getUserDetails(this, username)
         if (user && user !== "") {
@@ -57,7 +58,7 @@ async function CREATE_USER(request, reply) {
         };
 
         const userCreateResponse = await createUser(this, userDetails);
-        const token = await genereateToke(this, userCreateResponse)
+        const token = await genereateToke(this, userCreateResponse, device_info)
         return replySuccess(reply, { token });
     } catch (err) {
         return replyError(reply, { message: err.message });
@@ -68,6 +69,7 @@ async function CREATE_USER(request, reply) {
 async function LOGIN(request, reply) {
     try {
         const body = request.body;
+        const {device_info} = request.body
         const { username, password } = decryptObject(this, body,['username','password'])
         const user = await getUserDetails(this, username)
         if (!user) {
@@ -78,7 +80,7 @@ async function LOGIN(request, reply) {
             return replyError(reply, { message: 'Username or password is incorrect' })
         }
         delete user.password
-        const token = await genereateToke(this, user)
+        const token = await genereateToke(this, user, device_info)
         return replySuccess(reply, { token })
     } catch (err) {
         return replyError(reply, err)
@@ -99,17 +101,33 @@ async function GET_CODE(request, reply) {
 async function LOGIN_WITH_CODE(request, reply) {
     try {
         const loginCode = request.params.code
-        const cachedData = await getCacheValue(loginCode)
-        if (!cachedData) {
+        const { device_info } = request.body
+        const cachedData_code = await getCacheValue(loginCode)
+        if (!cachedData_code) {
             return replyError(reply, { message: 'invalid code or code has been expired' })
         }
-        const getDevicesCount = await getCacheValue(cachedData)
-        if (getDevicesCount && parseInt(getDevicesCount) > 2) {
-            return replyError(reply, { message: 'device limit exceeded' })
-        }
+        const userdata = await decodeToken(cachedData_code)
+        delete userdata.exp
         // deleteCacheValue(loginCode)
-        await setCacheValue(cachedData, (getDevicesCount ? parseInt(getDevicesCount) + 1 : 1), this.CONFIG.REDIS.TOKEN_EXPIRY_IN_SECS)
-        return replySuccess(reply, { message: 'login success', token: cachedData })
+        // await setCacheValue(cachedData, (getDevicesCount ? parseInt(getDevicesCount) + 1 : 1), this.CONFIG.REDIS.TOKEN_EXPIRY_IN_SECS)
+        const cachedData = await getCacheValue(userdata.username + this.CONFIG.REDIS.DEVICES_KEY)
+        if (cachedData) {
+            const devices = JSON.parse(cachedData)
+            if (devices.length > 2) {
+                return replyError(reply, { message: 'device limit exceeded' })
+            }
+            const exist = devices.find(e => e.
+                fingerprint === device_info.
+                    fingerprint)
+            if (exist) {
+                const token = await genereateToke(this, userdata, device_info)
+                return replySuccess(reply, { message: 'login success', token })
+            }
+            devices.push(device_info)
+            await setCacheValue(userdata.username + this.CONFIG.REDIS.DEVICES_KEY, JSON.stringify(devices))
+        }
+        const token = await genereateToke(this, userdata, device_info)
+        return replySuccess(reply, { message: 'login success', token })
     } catch (err) {
         return replyError(reply, err)
     }
@@ -171,5 +189,31 @@ async function REGISTER_GOOGLE_AUTH(request, reply) {
     }
 }
 
+async function GET_DEVICES(request, reply) {
+    try {
+        const token = request.token
+        const userdata = await decodeToken(token)
+        const cachedData = await getCacheValue(userdata.username + this.CONFIG.REDIS.DEVICES_KEY)
+        const devices = JSON.parse(cachedData)
+        return replySuccess(reply, { devices })
+    } catch (err) {
+        return replyError(reply, err)
+    }
+}
 
-module.exports = {CREATE_USER, LOGIN, GET_CODE, LOGIN_WITH_CODE, GET_IMAGE,GET_ROOM_ID,SAVE_ROOM_ID, REGISTER_GOOGLE_AUTH }
+async function REMOVE_DEVICE(request, reply) {
+    try {
+        const token = request.token
+        const is_remove_all_devices = request.body.is_remove_all_devices
+        const userdata = await decodeToken(token)
+        const cachedData = await getCacheValue(userdata.username + this.CONFIG.REDIS.DEVICES_KEY)
+        const devices = JSON.parse(cachedData)
+        is_remove_all_devices ? await setCacheValue(userdata.username + this.CONFIG.REDIS.DEVICES_KEY, JSON.stringify([])) : await setCacheValue(userdata.username + this.CONFIG.REDIS.DEVICES_KEY, JSON.stringify(devices.filter(e => e.fingerprint !== request.body.device_fingerprint)))
+        return replySuccess(reply, { message: 'device removed successfully' })
+    } catch (err) {
+        return replyError(reply, err)
+    }
+}
+
+
+module.exports = {CREATE_USER, LOGIN, GET_CODE, LOGIN_WITH_CODE, GET_IMAGE,GET_ROOM_ID,SAVE_ROOM_ID, REGISTER_GOOGLE_AUTH, GET_DEVICES, REMOVE_DEVICE }
