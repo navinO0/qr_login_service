@@ -168,10 +168,12 @@ async function SAVE_ROOM_ID(request, reply) {
 async function REGISTER_GOOGLE_AUTH(request, reply) {
     try {
         const body = request.body;
+        const {device_info} = request.body
         const { username, email,first_name, profile_photo } = decryptObject(this, body,['username','email','first_name']);
         const user = await getUserDetails(this, username)
+        const token = await genereateToke(this, {username, email, first_name}, device_info)
         if (user && user !== "") {
-           return replySuccess(reply, { message: "User already registered" })
+           return replySuccess(reply, { message: "User already registered" , token : token})
         }
 
         const userDetails = {
@@ -183,7 +185,7 @@ async function REGISTER_GOOGLE_AUTH(request, reply) {
         };
 
         await createUser(this, userDetails);
-        return replySuccess(reply, { message: 'success' })
+        return replySuccess(reply, { message: 'success', token : token })
     } catch (err) {
         return replyError(reply, err)
     }

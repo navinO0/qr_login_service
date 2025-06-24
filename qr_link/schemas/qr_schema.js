@@ -248,6 +248,9 @@ const register_google_user_schema = {
             },
             profile_photo: {
                 type: "string",
+            },
+            device_info: {
+                type : "object"
             }
         },
         required: ["username"],
