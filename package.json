@@ -5,7 +5,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon main.js",
-    "start": "node main.js"
+    "start": "node main.js",
+    "migrate": "knex migrate:latest --knexfile knexfile.cjs",
+    "rollback": "knex migrate:rollback --knexfile knexfile.js",
+    "seed": "knex seed:run --knexfile knexfile.js"
   },
   "keywords": [],
   "author": "",

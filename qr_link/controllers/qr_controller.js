@@ -196,8 +196,8 @@ async function GET_DEVICES(request, reply) {
         const token = request.token
         const userdata = await decodeToken(token)
         const cachedData = await getCacheValue(userdata.username + this.CONFIG.REDIS.DEVICES_KEY)
-        const devices = JSON.parse(cachedData)
-        return replySuccess(reply, { devices })
+        const devices = JSON.parse(cachedData) || []
+        return replySuccess(reply, { devices }) 
     } catch (err) {
         return replyError(reply, err)
     }
@@ -210,6 +210,9 @@ async function REMOVE_DEVICE(request, reply) {
         const userdata = await decodeToken(token)
         const cachedData = await getCacheValue(userdata.username + this.CONFIG.REDIS.DEVICES_KEY)
         const devices = JSON.parse(cachedData)
+        if(!is_remove_all_devices && !devices.find(e => e.fingerprint === request.body.device_fingerprint)){
+            return replyError(reply, { message: 'device not found' })
+        }
         is_remove_all_devices ? await setCacheValue(userdata.username + this.CONFIG.REDIS.DEVICES_KEY, JSON.stringify([])) : await setCacheValue(userdata.username + this.CONFIG.REDIS.DEVICES_KEY, JSON.stringify(devices.filter(e => e.fingerprint !== request.body.device_fingerprint)))
         return replySuccess(reply, { message: 'device removed successfully' })
     } catch (err) {
