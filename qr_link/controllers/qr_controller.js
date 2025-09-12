@@ -171,7 +171,7 @@ async function REGISTER_GOOGLE_AUTH(request, reply) {
         const {device_info} = request.body
         const { username, email,first_name, profile_photo } = decryptObject(this, body,['username','email','first_name']);
         const user = await getUserDetails(this, username)
-        const token = await genereateToke(this, {username, email, first_name}, device_info)
+        const token = await genereateToke(this, {username, email, first_name, id : user.id}, device_info)
         if (user && user !== "") {
            return replySuccess(reply, { message: "User already registered" , token : token})
         }
