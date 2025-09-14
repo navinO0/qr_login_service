@@ -170,9 +170,10 @@ async function REGISTER_GOOGLE_AUTH(request, reply) {
         const body = request.body;
         const {device_info} = request.body
         const { username, email,first_name, profile_photo } = decryptObject(this, body,['username','email','first_name']);
-        const user = await getUserDetails(this, username)
-        const token = await genereateToke(this, {username, email, first_name, id : user.id}, device_info)
+        let user = await getUserDetails(this, username)
+        let token;
         if (user && user !== "") {
+            token = await genereateToke(this, {username, email, first_name, id : user.id}, device_info)
            return replySuccess(reply, { message: "User already registered" , token : token})
         }
 
@@ -184,7 +185,8 @@ async function REGISTER_GOOGLE_AUTH(request, reply) {
             password : ''
         };
 
-        await createUser(this, userDetails);
+        user = await createUser(this, userDetails);
+        token = await genereateToke(this, {username, email, first_name, id : user.id}, device_info)
         return replySuccess(reply, { message: 'success', token : token })
     } catch (err) {
         return replyError(reply, err)
