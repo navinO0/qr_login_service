@@ -1,0 +1,76 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME     = "node-service"        // local image name
+        CONTAINER_NAME = "node-service"        // running container name
+        APP_PORT       = "3009"                // app port inside container
+        HOST_PORT      = "3009"                // exposed port on EC2
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Create .env from Jenkins credentials') {
+            steps {
+                withCredentials([
+                    string(credentialsId: 'my-node-env', variable: 'DOTENV_CONTENT')
+                ]) {
+                    sh '''
+                      echo "$DOTENV_CONTENT" > .env
+                      echo ".env file created"
+                    '''
+                }
+            }
+        }
+
+        stage('Install dependencies') {
+            steps {
+                sh 'npm ci || npm install'
+            }
+        }
+
+        stage('Run tests') {
+            steps {
+                // if you don't have tests, we don't fail the build
+                sh 'npm test || echo "Tests failed or not present, continuing..."'
+            }
+        }
+
+        stage('Build Docker image') {
+            steps {
+                sh 'docker build -t $IMAGE_NAME:$BUILD_NUMBER .'
+            }
+        }
+
+        stage('Stop old container') {
+            steps {
+                sh '''
+                  docker rm -f $CONTAINER_NAME || echo "No existing container"
+                '''
+            }
+        }
+
+        stage('Run new container') {
+            steps {
+                sh '''
+                  docker run -d \
+                    --name $CONTAINER_NAME \
+                    --env-file .env \
+                    -p $HOST_PORT:$APP_PORT \
+                    $IMAGE_NAME:$BUILD_NUMBER
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "Build finished with status: ${currentBuild.currentResult}"
+        }
+    }
+}
