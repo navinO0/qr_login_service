@@ -1,0 +1,18 @@
+version: '3.8'
+services:
+  app:
+    image: qrlogin/qrlogin:latest
+    restart: always
+    ports:
+      - "3000:3000" # host:container (change host port if needed)
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      # Add other env vars or use .env file
+    volumes:
+      - /home/deploy/app/logs:/usr/src/app/logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
