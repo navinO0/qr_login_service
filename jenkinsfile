@@ -1,76 +1,102 @@
 pipeline {
-    agent any
+  agent any
 
-    environment {
-        IMAGE_NAME     = "node-service"        // local image name
-        CONTAINER_NAME = "node-service"        // running container name
-        APP_PORT       = "3009"                // app port inside container
-        HOST_PORT      = "3009"                // exposed port on EC2
+  environment {
+    IMAGE_NAME     = "node-service"        // local image name
+    CONTAINER_NAME = "node-service"        // running container name
+    APP_PORT       = "3009"                // app port inside container
+    HOST_PORT      = "3009"                // exposed port on EC2
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
     }
 
-    stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
+    stage('Create .env from Jenkins credentials') {
+      steps {
+        withCredentials([string(credentialsId: 'my-node-env', variable: 'DOTENV_CONTENT')]) {
+          sh '''
+            echo "$DOTENV_CONTENT" > .env
+            echo ".env file created"
+            ls -la .env
+          '''
         }
-
-        stage('Create .env from Jenkins credentials') {
-            steps {
-                withCredentials([
-                    string(credentialsId: 'my-node-env', variable: 'DOTENV_CONTENT')
-                ]) {
-                    sh '''
-                      echo "$DOTENV_CONTENT" > .env
-                      echo ".env file created"
-                    '''
-                }
-            }
-        }
-
-        stage('Install dependencies') {
-            steps {
-                sh 'npm ci || npm install'
-            }
-        }
-
-        stage('Run tests') {
-            steps {
-                // if you don't have tests, we don't fail the build
-                sh 'npm test || echo "Tests failed or not present, continuing..."'
-            }
-        }
-
-        stage('Build Docker image') {
-            steps {
-                sh 'docker build -t $IMAGE_NAME:$BUILD_NUMBER .'
-            }
-        }
-
-        stage('Stop old container') {
-            steps {
-                sh '''
-                  docker rm -f $CONTAINER_NAME || echo "No existing container"
-                '''
-            }
-        }
-
-        stage('Run new container') {
-            steps {
-                sh '''
-                  docker run -d \
-                    --name $CONTAINER_NAME \
-                    --env-file .env \
-                    -p $HOST_PORT:$APP_PORT \
-                    $IMAGE_NAME:$BUILD_NUMBER
-                '''
-            }
-        }
+      }
     }
 
-    post {
-        always {
-            echo "Build finished with status: ${currentBuild.currentResult}"
-        }
+    // Run npm commands inside a Node image so node/npm is available
+    stage('Install dependencies') {
+      agent { docker { image 'node:18-alpine' } }
+      steps {
+        // workspace is mounted into the container, so node_modules will persist in the workspace
+        sh 'npm ci || npm install'
+      }
     }
+
+    stage('Run tests') {
+      agent { docker { image 'node:18-alpine' } }
+      steps {
+        // don't fail build if tests not present - adjust if you want tests to fail the build
+        sh 'npm test || echo "Tests failed or not present, continuing..."'
+      }
+    }
+
+    // Build Docker image: use a docker CLI image and mount the host docker socket so we can build images
+    stage('Build Docker image') {
+      agent {
+        docker {
+          image 'docker:24'
+          args  '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+      }
+      steps {
+        sh '''
+          echo "Building Docker image: $IMAGE_NAME:$BUILD_NUMBER"
+          docker build -t $IMAGE_NAME:$BUILD_NUMBER .
+          docker images | grep $IMAGE_NAME || true
+        '''
+      }
+    }
+
+    stage('Stop old container') {
+      agent { docker { image 'docker:24' args '-v /var/run/docker.sock:/var/run/docker.sock' } }
+      steps {
+        sh '''
+          echo "Stopping and removing any existing container named $CONTAINER_NAME (if present)..."
+          docker rm -f $CONTAINER_NAME 2>/dev/null || echo "No existing container"
+        '''
+      }
+    }
+
+    stage('Run new container') {
+      agent { docker { image 'docker:24' args '-v /var/run/docker.sock:/var/run/docker.sock' } }
+      steps {
+        sh '''
+          echo "Starting new container $CONTAINER_NAME from image $IMAGE_NAME:$BUILD_NUMBER"
+          docker run -d \
+            --name $CONTAINER_NAME \
+            --env-file .env \
+            -p $HOST_PORT:$APP_PORT \
+            --restart unless-stopped \
+            $IMAGE_NAME:$BUILD_NUMBER
+          docker ps -a | grep $CONTAINER_NAME || true
+        '''
+      }
+    }
+  }
+
+  post {
+    always {
+      echo "Build finished with status: ${currentBuild.currentResult}"
+    }
+    success {
+      echo "Deployment succeeded: $IMAGE_NAME:$BUILD_NUMBER -> $CONTAINER_NAME"
+    }
+    failure {
+      echo "Build or deployment failed."
+    }
+  }
 }
