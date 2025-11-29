@@ -10,7 +10,7 @@ const genereateToke = async (app, userdata, devvice_info) => {
     const token = jwt.sign(
         userdata,
         app.CONFIG.SECURITY_KEYS.JWT_SECRET,
-        { expiresIn: '4h' }
+        { expiresIn: CONFIG.REDIS.TOKEN_EXPIRY_IN_SECS }
     );
     await setCacheValue(userdata.username + "_token", token, CONFIG.REDIS.TOKEN_EXPIRY_IN_SECS)
     const cachedData = await getCacheValue(userdata.username + CONFIG.REDIS.DEVICES_KEY)
